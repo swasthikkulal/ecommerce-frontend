@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@font-face {
+  font-family: icecream;
+  src: url("/fonts/PinyonScript-Regular.ttf");
+}
