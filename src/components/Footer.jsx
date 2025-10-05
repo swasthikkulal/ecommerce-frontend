@@ -1,10 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 
 const Footer = () => {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form submitted");
-    // Add your form submission logic here
+  const token = localStorage.getItem("token");
+  const [formData, setformData] = useState({
+    name: "",
+    email: "",
+    description: "",
+  });
+  const handleChange = (e) => {
+    setformData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      const res = await fetch("http://localhost:3000/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "auth-token": token },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("your feedback sent successfully");
+        setformData({ name: "", email: "", description: "" });
+      } else {
+        console.log("invalid credentials");
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
   return (
@@ -54,21 +78,29 @@ const Footer = () => {
                 type="text"
                 className="border border-black h-[2.5rem] px-3 rounded-md outline-none md:text-[1rem] container"
                 placeholder="Enter the Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 required
               />
               <input
                 type="email"
                 className="border border-black h-[2.5rem] px-3 rounded-md outline-none md:text-[1rem] container"
                 placeholder="Enter the Email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 required
               />
               <textarea
                 name="description"
                 className="border border-black h-[5rem] px-3 rounded-md outline-none md:text-[1rem] pt-1 container"
                 placeholder="Enter the Description"
+                value={formData.description}
+                onChange={handleChange}
                 required
               ></textarea>
-              {/* SlideButton Replacement */}
+
               <button
                 type="submit"
                 className="w-full h-[3rem] bg-orange-400 text-white rounded-md font-semibold hover:bg-orange-500 transition-colors duration-200 flex items-center justify-center"

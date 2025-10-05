@@ -51,14 +51,19 @@ const Navbar = () => {
             <Link to="/about" className="hover:text-yellow-300 transition">
               About
             </Link>
-            <Link to="/courses" className="hover:text-yellow-300 transition">
-              Courses
-            </Link>
-            <Link to="/admissions" className="hover:text-yellow-300 transition">
-              Admissions
+
+            <Link to="/cartpage" className="hover:text-yellow-300 transition">
+              Cart
             </Link>
             <Link to="/contact" className="hover:text-yellow-300 transition">
               Contact
+            </Link>
+            <Link
+              to="/login"
+              className="hover:text-yellow-300 transition text-red-500"
+              onClick={() => localStorage.removeItem("token")}
+            >
+              Logout
             </Link>
           </div>
 
@@ -92,25 +97,27 @@ const Navbar = () => {
             About
           </Link>
           <Link
-            to="/courses"
+            to="/cartpage"
             className="block hover:text-yellow-300 transition"
             onClick={() => setIsOpen(false)}
           >
-            Courses
+            Cart
           </Link>
-          <Link
-            to="/admissions"
-            className="block hover:text-yellow-300 transition"
-            onClick={() => setIsOpen(false)}
-          >
-            Admissions
-          </Link>
+
           <Link
             to="/contact"
             className="block hover:text-yellow-300 transition"
             onClick={() => setIsOpen(false)}
           >
             Contact
+          </Link>
+
+          <Link
+            to="/login"
+            className="block hover:text-yellow-300 transition"
+            onClick={() => localStorage.removeItem("token")}
+          >
+            Logout
           </Link>
         </div>
       )}
