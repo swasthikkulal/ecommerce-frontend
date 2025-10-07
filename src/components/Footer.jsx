@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import config from "../config";
+import { useLocation } from "react-router-dom";
 const Footer = () => {
+  const location = useLocation();
   const token = localStorage.getItem("token");
   const [formData, setformData] = useState({
     name: "",
@@ -30,6 +32,9 @@ const Footer = () => {
       console.log(error.message);
     }
   };
+  if (location.pathname === "/login" || location.pathname === "/register") {
+    return null;
+  }
 
   return (
     <div className="w-screen border-black/5 bg-neutral-800/5 rounded-md mt-[2%]">
