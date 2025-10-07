@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronLeft, MoveLeft } from "lucide-react";
+import config from "../config";
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -17,7 +19,7 @@ const OrdersPage = () => {
 
   const authenticateAdmin = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/user/users", {
+      const response = await fetch(`${config.API_BASE_URL}/user/users`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -39,7 +41,7 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/checkout/getorder",
+          `${config.API_BASE_URL}/checkout/getorder`,
           {
             method: "GET",
             headers: {
@@ -168,8 +170,13 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-[10%]">
+        <ArrowLeft
+          className="w-6 h-6 text-gray-700 absolute top-[5%] left-[5%] cursor-pointer"
+          onClick={() => navigate("/adminpage")}
+        />
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -361,10 +368,14 @@ const OrdersPage = () => {
                             <div className="flex-shrink-0 h-10 w-10">
                               <img
                                 className="h-10 w-10 rounded-lg object-cover bg-gray-100"
-                                src={
+                                src={`http://localhost:3000${
                                   order.products?.[0]?.image ||
                                   "/placeholder-image.jpg"
-                                }
+                                }`}
+                                // src={
+                                //   order.products?.[0]?.image ||
+                                //   "/placeholder-image.jpg"
+                                // }
                                 alt={order.products?.[0]?.name || "Product"}
                                 onError={(e) => {
                                   e.target.src = "/placeholder-image.jpg";
@@ -600,7 +611,8 @@ const OrdersPage = () => {
                         className="flex items-center space-x-4 bg-white border rounded-lg p-4"
                       >
                         <img
-                          src={product.image}
+                          // src={product.image}
+                          src={`http://localhost:3000${product.image}`}
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded-lg bg-gray-100"
                           onError={(e) => {

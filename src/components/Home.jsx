@@ -5,13 +5,16 @@ import Layout2 from "./Layout2";
 import Layout3 from "./Layout3";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import config from "../config";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const Home = () => {
   const navigate = useNavigate();
   const [allIcecream, setAllIcecream] = useState([]);
   const [filteredIcecream, setFilteredIcecream] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [sortOrder, setSortOrder] = useState("none"); // 🔥 New state for A-Z sorting
+  const [sortOrder, setSortOrder] = useState("none");
+  const [searchQuery, setSearchQuery] = useState(""); // 🔥 New state for search
 
   // Categories data
   const categories = [
@@ -22,10 +25,16 @@ const Home = () => {
     { id: "vanilla", name: "Vanilla", icon: "🌱" },
     { id: "premium", name: "Premium", icon: "⭐" },
   ];
+  const token = localStorage.getItem("token");
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, []);
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/product")
+      .get(`${config.API_BASE_URL}/product`)
       .then((res) => {
         setAllIcecream(res.data.data);
         setFilteredIcecream(res.data.data);
@@ -33,9 +42,32 @@ const Home = () => {
       .catch((err) => console.log(err.message));
   }, []);
 
+  // 🔥 Search function
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+
+    if (!query.trim()) {
+      // If search is empty, show filtered results by category
+      filterByCategory(activeCategory);
+      return;
+    }
+
+    const searchTerm = query.toLowerCase().trim();
+    const searched = allIcecream.filter((item) => {
+      const name = item.name?.toLowerCase() || "";
+      const description = item.description?.toLowerCase() || "";
+
+      return name.includes(searchTerm) || description.includes(searchTerm);
+    });
+
+    // Apply current sorting to search results
+    setFilteredIcecream(sortIcecream(searched, sortOrder));
+  };
+
   // Filter products by category
   const filterByCategory = (categoryId) => {
     setActiveCategory(categoryId);
+    setSearchQuery(""); // Clear search when category changes
 
     let filtered = [];
     if (categoryId === "all") {
@@ -188,7 +220,7 @@ const Home = () => {
   });
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center pt-16 font-['cola'] ">
+    <div className="min-h-screen -w-screen overflow-x-hidden flex flex-col items-center pt-16 font-['cola'] ">
       {/* Hero Section */}
       <div
         className="w-[95%] sm:w-[90%] lg:w-[85%] xl:w-[80%]
@@ -216,7 +248,10 @@ const Home = () => {
               className="flex gap-4 mt-6 justify-center lg:justify-start"
               ref={buttonRef}
             >
-              <button className="bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600">
+              <button
+                className="bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600"
+                onClick={() => navigate("/about")}
+              >
                 Explore
               </button>
               <button className="text-black shadow-lg px-5 py-2 rounded-lg hover:bg-gray-200">
@@ -240,6 +275,30 @@ const Home = () => {
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
           Browse by Category
         </h2>
+
+        {/* 🔥 Search Bar */}
+        <div className="flex justify-center mb-6">
+          <div className="relative w-full max-w-md">
+            <input
+              type="text"
+              placeholder="Search by name or description..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full px-4 py-3 pl-12 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            />
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+              <span className="text-gray-400">🔍</span>
+            </div>
+            {searchQuery && (
+              <button
+                onClick={() => handleSearch("")}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-wrap justify-center gap-3 mb-6">
           {categories.map((category) => (
@@ -283,28 +342,40 @@ const Home = () => {
           </button>
         </div>
 
-        {/* Active Category Info */}
+        {/* Active Category/Search Info */}
         <div className="text-center mb-6">
           <p className="text-gray-600">
-            Showing {filteredIcecream.length} products in{" "}
-            <span className="font-semibold text-blue-600">
-              {categories.find((cat) => cat.id === activeCategory)?.name}
-            </span>
+            {searchQuery ? (
+              <>
+                Found {filteredIcecream.length} products matching "
+                <span className="font-semibold text-blue-600">
+                  {searchQuery}
+                </span>
+                "
+              </>
+            ) : (
+              <>
+                Showing {filteredIcecream.length} products in{" "}
+                <span className="font-semibold text-blue-600">
+                  {categories.find((cat) => cat.id === activeCategory)?.name}
+                </span>
+              </>
+            )}
           </p>
         </div>
       </div>
 
       {/* Products Grid */}
-      <div className="grid md:grid-cols-5 gap-3 mt-5 w-full  px-4">
+      <div className="grid md:grid-cols-5 gap-3 mt-5 w-full px-4">
         {filteredIcecream.length > 0 ? (
           filteredIcecream.map((item, index) => (
             <div
               key={index}
-              className="md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] grid grid-cols-2 md:grid-cols-none cursor-pointer border bg-neutral-800/5 hover:shadow-lg"
+              className="relative md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] grid grid-cols-2 md:grid-cols-none cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white"
             >
               <div className="md:h-[15rem] md:w-full w-[80%] h-full mx-5 md:mx-0">
                 <img
-                  src={item.image}
+                  src={`http://localhost:3000${item.image}`}
                   alt="icecream"
                   className="object-cover w-full h-full rounded-md"
                 />
@@ -315,7 +386,7 @@ const Home = () => {
                     {item.name}
                   </p>
                   <p className="text-[0.8rem] text-green-600 font-medium">
-                    ${item.price} per 1/kg
+                    {item.price} per 1/kg
                   </p>
                   {item.stock && (
                     <p className="text-[0.7rem] text-gray-500">
@@ -324,7 +395,7 @@ const Home = () => {
                   )}
                 </div>
                 <div
-                  className="flex items-center justify-center w-[5rem] h-[2rem] bg-orange-300 rounded-md mx-12 md:mx-0 cursor-pointer hover:bg-orange-400"
+                  className="md:absolute flex items-center justify-center w-[5rem] h-[2rem] md:top-[85%] left-[60%] bg-orange-300 rounded-md mx-12 md:mx-0 cursor-pointer hover:bg-orange-400 "
                   onClick={() => navigate(`/singleview/${item._id}`)}
                 >
                   <p className="text-[0.8rem] font-medium">View</p>
@@ -334,15 +405,20 @@ const Home = () => {
           ))
         ) : (
           <div className="col-span-full text-center py-12">
-            <div className="text-6xl mb-4">🍦</div>
+            <div className="text-6xl mb-4">{searchQuery ? "🔍" : "🍦"}</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              No products found
+              {searchQuery ? "No products found" : "No products found"}
             </h3>
             <p className="text-gray-500 mb-4">
-              Try selecting a different category or check back later.
+              {searchQuery
+                ? `No products found for "${searchQuery}". Try a different search term.`
+                : "Try selecting a different category or check back later."}
             </p>
             <button
-              onClick={() => filterByCategory("all")}
+              onClick={() => {
+                setSearchQuery("");
+                filterByCategory("all");
+              }}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               Show All Products

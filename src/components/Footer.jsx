@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import config from "../config";
 const Footer = () => {
   const token = localStorage.getItem("token");
   const [formData, setformData] = useState({
@@ -14,7 +14,7 @@ const Footer = () => {
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
-      const res = await fetch("http://localhost:3000/api/feedback", {
+      const res = await fetch(`${config.API_BASE_URL}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "auth-token": token },
         body: JSON.stringify(formData),
@@ -32,7 +32,7 @@ const Footer = () => {
   };
 
   return (
-    <div className="w-full border-black/5 bg-neutral-800/5 rounded-md mt-[2%]">
+    <div className="w-screen border-black/5 bg-neutral-800/5 rounded-md mt-[2%]">
       <footer className="md:h-[60vh] h-[130vh]">
         <div className="flex items-center md:justify-between md:pr-[3rem] md:p-0 p-2">
           <div className="p-[3%] mx-[5%]">

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import config from "../config";
 
 const PaymentButton = () => {
   const makePayment = async () => {
@@ -7,7 +8,7 @@ const PaymentButton = () => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(
-        "http://localhost:3000/api/payment/create-order", // ✅ make sure your route matches backend
+        `${config.API_BASE_URL}/payment/create-order`, // ✅ make sure your route matches backend
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "auth-token": token },

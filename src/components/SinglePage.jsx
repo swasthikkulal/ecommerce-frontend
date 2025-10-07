@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { CloudHail } from "lucide-react";
+import config from "../config";
 
 export default function SingleViewPage() {
   const nav = useNavigate();
@@ -13,7 +14,7 @@ export default function SingleViewPage() {
   const [allIcecream, setallIcecream] = useState();
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/product")
+      .get(`${config.API_BASE_URL}/product`)
       .then((res) => {
         setallIcecream(res.data.data);
         console.log(res.data.data);
@@ -33,7 +34,7 @@ export default function SingleViewPage() {
   const fetchIcecream = () => {
     setLoading(true);
     axios
-      .get(`http://localhost:3000/api/product/${id}`)
+      .get(`${config.API_BASE_URL}/product/${id}`)
       .then((res) => {
         setgetbyId(res.data.data);
         console.log(res.data.data);
@@ -100,7 +101,7 @@ export default function SingleViewPage() {
         total: totalPrice,
         status: "cart",
       };
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${config.API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +159,7 @@ export default function SingleViewPage() {
           </div>
           <div className="flex items-center justify-center p-4">
             <img
-              src={getbyId.image}
+              src={`http://localhost:3000${getbyId.image}`}
               alt={getbyId.name}
               className="imageShadow max-w-full h-auto rounded-lg shadow-lg"
             />
@@ -310,44 +311,66 @@ export default function SingleViewPage() {
 
         {/* Add related products here */}
 
-        <div className="grid md:grid-cols-5 gap-3 mt-5 md:mt-[10%]">
-          {allIcecream &&
+        {/* Products Grid */}
+        <div className="grid md:grid-cols-5 gap-3 mt-5 w-full px-4">
+          {allIcecream.length > 0 ? (
             allIcecream.map((item, index) => (
               <div
                 key={index}
-                className="md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] h-[8rem] grid grid-cols-2 md:grid-cols-none cursor-pointer border border-t-5 border-t-orange-200 bg-neutral-800/5 overflow-hidden"
+                className="relative md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] grid grid-cols-2 md:grid-cols-none cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white"
               >
-                <div className="md:h-[15rem] md:w-full rounded-md w-[80%] h-full mx-5 md:mx-0 hover:p-3">
-                  {/* <Img
-              src="https://i.pinimg.com/1200x/bd/76/54/bd76543030db11c3f7c7bbd85f5d0270.jpg"
-              alt="fruits"
-              width={300}
-              height={100}
-              className="imageShadow1"
-            /> */}
+                <div className="md:h-[15rem] md:w-full w-[80%] h-full mx-5 md:mx-0">
                   <img
-                    src={item.image}
+                    src={`http://localhost:3000${item.image}`}
                     alt="icecream"
-                    className="object-cover h-fit w-fit"
+                    className="object-cover w-full h-full rounded-md"
                   />
                 </div>
                 <div className="grid md:grid-cols-2">
-                  <div className="text-center md:text-start mt-3 md:mt-0 md:px-3">
-                    <p className="font-semibold md:text-[1rem] text-[1rem]">
+                  <div className="text-center md:text-start mt-3 md:px-3">
+                    <p className="font-semibold text-[1rem] line-clamp-1">
                       {item.name}
                     </p>
-                    <p className="text-[0.8rem]">{item.price}per 1/kg</p>
+                    <p className="text-[0.8rem] text-green-600 font-medium">
+                      ${item.price} per 1/kg
+                    </p>
+                    {item.stock && (
+                      <p className="text-[0.7rem] text-gray-500">
+                        Stock: {item.stock}
+                      </p>
+                    )}
                   </div>
-                  {/* <PaymentButton /> */}
                   <div
-                    className="flex items-center justify-center w-[5rem] h-[2rem] bg-orange-300 md:mt-2 mt-0 rounded-md mx-12 md:mx-0 cursor-pointer"
+                    className="md:absolute flex items-center justify-center w-[5rem] h-[2rem] md:top-[85%] left-[60%] bg-orange-300 rounded-md mx-12 md:mx-0 cursor-pointer hover:bg-orange-400 "
                     onClick={() => nav(`/singleview/${item._id}`)}
                   >
-                    <p className="md:text-[1rem] text-[0.8rem]">View</p>
+                    <p className="text-[0.8rem] font-medium">View</p>
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <div className="text-6xl mb-4">{searchQuery ? "🔍" : "🍦"}</div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                {searchQuery ? "No products found" : "No products found"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery
+                  ? `No products found for "${searchQuery}". Try a different search term.`
+                  : "Try selecting a different category or check back later."}
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  filterByCategory("all");
+                }}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Show All Products
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

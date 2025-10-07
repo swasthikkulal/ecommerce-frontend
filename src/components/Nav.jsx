@@ -1,19 +1,19 @@
 import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react"; // For hamburger icons
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 const Navbar = () => {
   const logoRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
   useGSAP(() => {
     const tl = gsap.timeline();
 
-    // Animate the logo
     tl.from(logoRef.current, {
       y: "-10%",
       duration: 1,
@@ -22,7 +22,6 @@ const Navbar = () => {
       ease: "power2.out",
     });
 
-    // Animate the navigation links
     tl.from(".navanimation", {
       y: -10,
       duration: 0.3,
@@ -32,18 +31,21 @@ const Navbar = () => {
     });
   }, []);
 
+  // ✅ Early return AFTER hooks
+  if (location.pathname === "/login" || location.pathname === "/register") {
+    return null;
+  }
+
   return (
     <nav className="backdrop-blur-sm text-black shadow-lg fixed top-0 w-full z-50 font-['cola']">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
           <Link to="/" className="text-4xl font-bold tracking-wide">
             <span ref={logoRef} className="font-[icecream]">
               IceCream
             </span>
           </Link>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 navanimation">
             <Link to="/" className="hover:text-yellow-300 transition">
               Home
@@ -51,12 +53,8 @@ const Navbar = () => {
             <Link to="/about" className="hover:text-yellow-300 transition">
               About
             </Link>
-
             <Link to="/cartpage" className="hover:text-yellow-300 transition">
               Cart
-            </Link>
-            <Link to="/contact" className="hover:text-yellow-300 transition">
-              Contact
             </Link>
             <Link
               to="/login"
@@ -67,7 +65,6 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
               onClick={toggleMenu}
@@ -79,7 +76,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
       {isOpen && (
         <div className="md:hidden bg-white px-4 py-4 space-y-3">
           <Link
@@ -103,15 +99,6 @@ const Navbar = () => {
           >
             Cart
           </Link>
-
-          <Link
-            to="/contact"
-            className="block hover:text-yellow-300 transition"
-            onClick={() => setIsOpen(false)}
-          >
-            Contact
-          </Link>
-
           <Link
             to="/login"
             className="block hover:text-yellow-300 transition"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import PaymentButton from "../components/PaymentButton";
-
+import config from "../config";
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,15 +42,12 @@ const CartPage = () => {
   const fetchCartItems = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:3000/api/orders/getorder",
-        {
-          method: "GET",
-          headers: {
-            "auth-token": token,
-          },
-        }
-      );
+      const response = await fetch(`${config.API_BASE_URL}/orders/getorder`, {
+        method: "GET",
+        headers: {
+          "auth-token": token,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -185,7 +182,7 @@ const CartPage = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:3000/api/orders/remove-item/${orderId}/${productId}`,
+        `${config.API_BASE_URL}/orders/remove-item/${orderId}/${productId}`,
         {
           method: "DELETE",
           headers: {
@@ -289,7 +286,7 @@ const CartPage = () => {
 
       console.log("Sending POST checkout data:", checkoutData);
 
-      const response = await fetch("http://localhost:3000/api/checkout/order", {
+      const response = await fetch(`${config.API_BASE_URL}/checkout/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -302,7 +299,7 @@ const CartPage = () => {
 
       if (response.ok && result.success) {
         console.log("New order created successfully:", result);
-        alert("Order created successfully! Your order is being processed.");
+        alert("Address created successfully.");
 
         // Clear localStorage flags
         localStorage.removeItem("paymentCompleted");
@@ -379,7 +376,7 @@ const CartPage = () => {
                   >
                     <div className="flex items-center space-x-4 flex-1">
                       <img
-                        src={item.image}
+                        src={`http://localhost:3000${item.image}`}
                         alt={item.name}
                         className="flex-none w-20 h-20 rounded-lg object-cover bg-gray-100"
                       />

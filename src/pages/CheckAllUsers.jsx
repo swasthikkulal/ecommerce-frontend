@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronLeft, MoveLeft } from "lucide-react";
 
 const CheckAllUsers = () => {
   const [users, setUsers] = useState([]);
@@ -112,6 +113,11 @@ const CheckAllUsers = () => {
   return (
     <div className="min-h-screen bg-white py-8 px-4">
       <div className="max-w-7xl mx-auto mt-[10%]">
+        <ArrowLeft
+          className="w-6 h-6 text-gray-700 absolute top-[8%] left-[5%] cursor-pointer"
+          onClick={() => nav("/adminpage")}
+        />
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
