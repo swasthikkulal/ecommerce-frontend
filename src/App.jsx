@@ -18,6 +18,10 @@ import AddProduct from "./pages/AddProduct";
 import CheckAllUsers from "./pages/CheckAllUsers";
 import ScrollToTop from "./components/ScrollToTop";
 import OrdersPage from "./pages/OrderPage";
+import CategoryNav from "./components/CategoryNav";
+import CategoryProducts from "./pages/CategoryProducts";
+import CategoryManager from "./components/CategoryManager";
+import ProductManager from "./components/ProductManager";
 
 function App() {
   return (
@@ -25,7 +29,15 @@ function App() {
       <ScrollToTop />
       <div className="App w-screen min-h-screen ">
         <Nav />
+        {/* <CategoryNav /> */}
         <Routes>
+          <Route
+            path="/category/:categorySlug"
+            element={<CategoryProducts />}
+          />
+          <Route path="/categorymanager" element={<CategoryManager />} />
+          <Route path="/productmanager" element={<ProductManager />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />

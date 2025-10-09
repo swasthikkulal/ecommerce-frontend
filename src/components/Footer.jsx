@@ -68,7 +68,7 @@ const Footer = () => {
         <div className="flex flex-col">
           <div className="md:mx-[2%] mx-10">
             <div className="text-start md:mx-[10%] flex gap-0.5">
-              <p className="md:text-2xl text-xl font-semibold">.Fruitify</p>
+              <p className="md:text-2xl text-xl font-semibold">Icecream</p>
               <p className="border border-red-500 text-[0.5rem] px-1 py-0.5 text-red-500 rounded-sm h-fit">
                 beta
               </p>

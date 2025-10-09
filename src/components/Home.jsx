@@ -5,171 +5,102 @@ import Layout2 from "./Layout2";
 import Layout3 from "./Layout3";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import config from "../config";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import CategoryNav from "./CategoryNav";
 
 const Home = () => {
   const navigate = useNavigate();
-  const [allIcecream, setAllIcecream] = useState([]);
-  const [filteredIcecream, setFilteredIcecream] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [sortOrder, setSortOrder] = useState("none");
-  const [searchQuery, setSearchQuery] = useState(""); // 🔥 New state for search
+  const [products, setProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Categories data
-  const categories = [
-    { id: "all", name: "All Products", icon: "🍦" },
-    { id: "chocolate", name: "Chocolate", icon: "🍫" },
-    { id: "sugarfree", name: "Sugar Free", icon: "🩺" },
-    { id: "fruity", name: "Fruity", icon: "🍓" },
-    { id: "vanilla", name: "Vanilla", icon: "🌱" },
-    { id: "premium", name: "Premium", icon: "⭐" },
-  ];
+  // Add a ref for the timeout
+  const searchTimeoutRef = useRef(null);
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
   const token = localStorage.getItem("token");
+
   useEffect(() => {
     if (!token) {
       navigate("/login");
     }
-  }, []);
+  }, [token, navigate]);
 
+  // Fetch products from backend
+  const fetchProducts = async (search = "") => {
+    try {
+      setLoading(true);
+
+      const params = new URLSearchParams();
+
+      if (search) {
+        params.append("search", search);
+      }
+
+      console.log("Fetching products with params:", params.toString());
+
+      const response = await axios.get(`${API_BASE_URL}/product?${params}`);
+
+      if (response.data.success) {
+        setProducts(response.data.data);
+        console.log("Products fetched:", response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
-    axios
-      .get(`${config.API_BASE_URL}/product`)
-      .then((res) => {
-        setAllIcecream(res.data.data);
-        setFilteredIcecream(res.data.data);
-      })
-      .catch((err) => console.log(err.message));
+    fetchProducts();
   }, []);
 
-  // 🔥 Search function
+  // Proper debounced search function - calls backend
   const handleSearch = (query) => {
     setSearchQuery(query);
 
-    if (!query.trim()) {
-      // If search is empty, show filtered results by category
-      filterByCategory(activeCategory);
-      return;
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    const searchTerm = query.toLowerCase().trim();
-    const searched = allIcecream.filter((item) => {
-      const name = item.name?.toLowerCase() || "";
-      const description = item.description?.toLowerCase() || "";
-
-      return name.includes(searchTerm) || description.includes(searchTerm);
-    });
-
-    // Apply current sorting to search results
-    setFilteredIcecream(sortIcecream(searched, sortOrder));
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchProducts(query);
+    }, 500); // 500ms delay
   };
 
-  // Filter products by category
-  const filterByCategory = (categoryId) => {
-    setActiveCategory(categoryId);
-    setSearchQuery(""); // Clear search when category changes
-
-    let filtered = [];
-    if (categoryId === "all") {
-      filtered = allIcecream;
-    } else {
-      filtered = allIcecream.filter((item) => {
-        const name = item.name?.toLowerCase() || "";
-        const description = item.description?.toLowerCase() || "";
-        switch (categoryId) {
-          case "chocolate":
-            return (
-              name.includes("chocolate") ||
-              description.includes("chocolate") ||
-              name.includes("cocoa") ||
-              description.includes("cocoa") ||
-              name.includes("fudge") ||
-              description.includes("fudge")
-            );
-          case "sugarfree":
-            return (
-              name.includes("sugar free") ||
-              description.includes("sugar free") ||
-              name.includes("sugar-free") ||
-              description.includes("sugar-free") ||
-              name.includes("no sugar") ||
-              description.includes("no sugar")
-            );
-          case "fruity":
-            return (
-              name.includes("strawberry") ||
-              description.includes("strawberry") ||
-              name.includes("berry") ||
-              description.includes("berry") ||
-              name.includes("fruit") ||
-              description.includes("fruit") ||
-              name.includes("mango") ||
-              description.includes("mango") ||
-              name.includes("pineapple") ||
-              description.includes("pineapple")
-            );
-          case "vanilla":
-            return (
-              name.includes("vanilla") ||
-              description.includes("vanilla") ||
-              name.includes("cream") ||
-              description.includes("cream")
-            );
-          case "premium":
-            return (
-              name.includes("premium") ||
-              description.includes("premium") ||
-              name.includes("gourmet") ||
-              description.includes("gourmet") ||
-              name.includes("artisanal") ||
-              description.includes("artisanal") ||
-              parseFloat(item.price) > 6
-            );
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Apply sorting after filtering
-    setFilteredIcecream(sortIcecream(filtered, sortOrder));
+  // Reset to show all products
+  const handleShowAllProducts = () => {
+    setSearchQuery("");
+    fetchProducts();
   };
 
-  // 🔥 Sorting function
-  const sortIcecream = (list, order) => {
-    const sorted = [...list];
-    if (order === "asc") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (order === "desc") {
-      sorted.sort((a, b) => b.name.localeCompare(a.name));
-    }
-    return sorted;
-  };
-
-  // 🔥 Handle sort change
-  const handleSortChange = (order) => {
-    setSortOrder(order);
-    setFilteredIcecream(sortIcecream(filteredIcecream, order));
-  };
-
-  const checkAdmin = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/admin/check", {
-        method: "GET",
-        headers: { "Content-Type": "application/json", "auth-token": token },
-      });
-      const data = await res.json();
-      if (data.success) {
-        navigate("/adminpage");
-      } else {
-        alert("only admin can access this page");
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-    } catch (error) {
-      console.log(error.message);
+    };
+  }, []);
+
+  // Helper function to get category name safely
+  const getCategoryName = (item) => {
+    if (!item.category) return "Uncategorized";
+
+    // If category is an object with name property
+    if (typeof item.category === "object" && item.category.name) {
+      return item.category.name;
     }
+
+    // If category is just a string (ID)
+    return "Category";
   };
 
+  // Your existing GSAP animations...
   const heroTextRef = useRef(null);
   const paraRef = useRef(null);
   const buttonRef = useRef(null);
@@ -220,7 +151,7 @@ const Home = () => {
   });
 
   return (
-    <div className="min-h-screen -w-screen overflow-x-hidden flex flex-col items-center pt-16 font-['cola'] ">
+    <div className="min-h-screen w-screen overflow-x-hidden flex flex-col items-center pt-16 font-['cola'] relative">
       {/* Hero Section */}
       <div
         className="w-[95%] sm:w-[90%] lg:w-[85%] xl:w-[80%]
@@ -270,21 +201,22 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Categories Section */}
+      {/* Products Section */}
       <div ref={categoriesRef} className="w-full max-w-7xl px-4 mt-8">
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
-          Browse by Category
+          Our Products
         </h2>
 
-        {/* 🔥 Search Bar */}
-        <div className="flex justify-center mb-6">
+        {/* SEARCH BAR - Backend search */}
+        <div className="flex justify-center mb-8">
           <div className="relative w-full max-w-md">
             <input
               type="text"
-              placeholder="Search by name or description..."
+              placeholder="Search products by name or description..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="w-full px-4 py-3 pl-12 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              disabled={loading}
             />
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
               <span className="text-gray-400">🔍</span>
@@ -293,6 +225,7 @@ const Home = () => {
               <button
                 onClick={() => handleSearch("")}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={loading}
               >
                 ✕
               </button>
@@ -300,106 +233,69 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 mb-6">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => filterByCategory(category.id)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition
-                ${
-                  activeCategory === category.id
-                    ? "bg-blue-500 text-white shadow-lg scale-105"
-                    : "bg-white text-gray-700 shadow-md hover:bg-gray-50"
-                }`}
-            >
-              <span>{category.icon}</span>
-              <span>{category.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Sorting Section */}
-        <div className="flex justify-center gap-3 mb-6">
-          <button
-            onClick={() => handleSortChange("asc")}
-            className={`px-4 py-2 rounded-lg transition ${
-              sortOrder === "asc"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-700 shadow-md hover:bg-gray-50"
-            }`}
-          >
-            A → Z
-          </button>
-          <button
-            onClick={() => handleSortChange("desc")}
-            className={`px-4 py-2 rounded-lg transition ${
-              sortOrder === "desc"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-700 shadow-md hover:bg-gray-50"
-            }`}
-          >
-            Z → A
-          </button>
-        </div>
-
-        {/* Active Category/Search Info */}
+        {/* Active Search Info */}
         <div className="text-center mb-6">
           <p className="text-gray-600">
-            {searchQuery ? (
+            {loading ? (
+              "Loading products..."
+            ) : searchQuery ? (
               <>
-                Found {filteredIcecream.length} products matching "
+                Found {products.length} products matching "
                 <span className="font-semibold text-blue-600">
                   {searchQuery}
                 </span>
                 "
               </>
             ) : (
-              <>
-                Showing {filteredIcecream.length} products in{" "}
-                <span className="font-semibold text-blue-600">
-                  {categories.find((cat) => cat.id === activeCategory)?.name}
-                </span>
-              </>
+              <>Showing all {products.length} products</>
             )}
           </p>
         </div>
       </div>
+      <CategoryNav />
 
-      {/* Products Grid */}
-      <div className="grid md:grid-cols-5 gap-3 mt-5 w-full px-4">
-        {filteredIcecream.length > 0 ? (
-          filteredIcecream.map((item, index) => (
+      {/* Products Grid - All data comes from backend */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-5 w-full max-w-7xl px-4">
+        {loading ? (
+          <div className="col-span-full text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="text-gray-600 mt-4">Loading products...</p>
+          </div>
+        ) : products.length > 0 ? (
+          products.map((item) => (
             <div
-              key={index}
-              className="relative md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] grid grid-cols-2 md:grid-cols-none cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white"
+              key={item._id}
+              className="relative bg-white rounded-xl p-4 shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
             >
-              <div className="md:h-[15rem] md:w-full w-[80%] h-full mx-5 md:mx-0">
+              <div className="h-48 w-full mb-4">
                 <img
-                  src={`http://localhost:3000${item.image}`}
-                  alt="icecream"
+                  src={item.image}
+                  alt={item.name}
                   className="object-cover w-full h-full rounded-md"
+                  onError={(e) => {
+                    e.target.src = "/placeholder-image.jpg";
+                  }}
                 />
               </div>
-              <div className="grid md:grid-cols-2">
-                <div className="text-center md:text-start mt-3 md:px-3">
-                  <p className="font-semibold text-[1rem] line-clamp-1">
-                    {item.name}
-                  </p>
-                  <p className="text-[0.8rem] text-green-600 font-medium">
-                    {item.price} per 1/kg
-                  </p>
-                  {item.stock && (
-                    <p className="text-[0.7rem] text-gray-500">
-                      Stock: {item.stock}
-                    </p>
-                  )}
-                </div>
-                <div
-                  className="md:absolute flex items-center justify-center w-[5rem] h-[2rem] md:top-[85%] left-[60%] bg-orange-300 rounded-md mx-12 md:mx-0 cursor-pointer hover:bg-orange-400 "
-                  onClick={() => navigate(`/singleview/${item._id}`)}
-                >
-                  <p className="text-[0.8rem] font-medium">View</p>
-                </div>
+              <div className="space-y-2">
+                <p className="font-semibold text-lg line-clamp-1">
+                  {item.name}
+                </p>
+                <p className="text-green-600 font-medium">
+                  ₹{item.price} per kg
+                </p>
+                {item.stock && (
+                  <p className="text-sm text-gray-500">Stock: {item.stock}</p>
+                )}
+                <p className="text-sm text-blue-600 capitalize">
+                  {getCategoryName(item)}
+                </p>
+              </div>
+              <div
+                className="mt-4 flex items-center justify-center w-full h-10 bg-orange-300 rounded-md cursor-pointer hover:bg-orange-400 transition-colors"
+                onClick={() => navigate(`/singleview/${item._id}`)}
+              >
+                <p className="text-sm font-medium">View Details</p>
               </div>
             </div>
           ))
@@ -407,18 +303,15 @@ const Home = () => {
           <div className="col-span-full text-center py-12">
             <div className="text-6xl mb-4">{searchQuery ? "🔍" : "🍦"}</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {searchQuery ? "No products found" : "No products found"}
+              {searchQuery ? "No products found" : "No products available"}
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery
                 ? `No products found for "${searchQuery}". Try a different search term.`
-                : "Try selecting a different category or check back later."}
+                : "Check back later for new products."}
             </p>
             <button
-              onClick={() => {
-                setSearchQuery("");
-                filterByCategory("all");
-              }}
+              onClick={handleShowAllProducts}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               Show All Products

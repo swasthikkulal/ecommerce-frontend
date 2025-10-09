@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { CloudHail } from "lucide-react";
-import config from "../config";
 
 export default function SingleViewPage() {
   const nav = useNavigate();
@@ -10,14 +8,16 @@ export default function SingleViewPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { id } = useParams();
+  const [allIcecream, setallIcecream] = useState([]);
 
-  const [allIcecream, setallIcecream] = useState();
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+
   useEffect(() => {
     axios
-      .get(`${config.API_BASE_URL}/product`)
+      .get(`${API_BASE_URL}/product`)
       .then((res) => {
         setallIcecream(res.data.data);
-        console.log(res.data.data);
       })
       .catch((err) => {
         console.log(err.message);
@@ -25,19 +25,18 @@ export default function SingleViewPage() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // ✅ Added "token" as argument
+    const token = localStorage.getItem("token");
     if (!token) {
       nav("/login");
     }
-  }, []);
+  }, [nav]);
 
   const fetchIcecream = () => {
     setLoading(true);
     axios
-      .get(`${config.API_BASE_URL}/product/${id}`)
+      .get(`${API_BASE_URL}/product/${id}`)
       .then((res) => {
         setgetbyId(res.data.data);
-        console.log(res.data.data);
       })
       .catch((error) => {
         console.log(error.message);
@@ -87,7 +86,7 @@ export default function SingleViewPage() {
         alert("Product information not available");
         return;
       }
-      console.log(token);
+
       const orderData = {
         products: [
           {
@@ -101,7 +100,8 @@ export default function SingleViewPage() {
         total: totalPrice,
         status: "cart",
       };
-      const response = await fetch(`${config.API_BASE_URL}/orders`, {
+
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,14 +111,13 @@ export default function SingleViewPage() {
       });
 
       const result = await response.json();
-      console.log(result);
 
       if (result.success) {
         alert(`✅ ${quantity} kg of ${getbyId.name} added to cart!`);
+        nav("/cartpage");
       } else {
         alert(`❌ Failed to add to cart: ${result.message || "Unknown error"}`);
       }
-      nav("/cartpage");
     } catch (error) {
       console.log(error.message);
     }
@@ -147,58 +146,89 @@ export default function SingleViewPage() {
     );
 
   return (
-    <div className="max-w-[100%] min-h-screen grid justify-center items-center py-8">
-      <div className="md:grid md:grid-cols-2 max-w-7xl w-full items-center justify-center gap-10 mt-[3%]">
-        {/* Product Image Section */}
-        <div className="w-full grid items-center justify-center">
-          <div className="px-4 pt-4 mb-4">
-            <p className="flex text-gray-600">
-              Icecream /{" "}
-              <b className="text-red-500 font-semibold">{getbyId.name}</b>
-            </p>
-          </div>
-          <div className="flex items-center justify-center p-4">
-            <img
-              src={`http://localhost:3000${getbyId.image}`}
-              alt={getbyId.name}
-              className="imageShadow max-w-full h-auto rounded-lg shadow-lg"
-            />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 py-8 mt-[5%]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Product Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Product Image Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            {/* Breadcrumb */}
+            <nav className="mb-6">
+              <ol className="flex items-center space-x-2 text-sm text-gray-500">
+                <li>
+                  <button
+                    onClick={() => nav("/")}
+                    className="hover:text-indigo-600 transition-colors"
+                  >
+                    Home
+                  </button>
+                </li>
+                <li>/</li>
+                <li>
+                  <button
+                    onClick={() => nav("/")}
+                    className="hover:text-indigo-600 transition-colors"
+                  >
+                    Products
+                  </button>
+                </li>
+                <li>/</li>
+                <li className="text-indigo-600 font-semibold">
+                  {getbyId.name}
+                </li>
+              </ol>
+            </nav>
 
-        {/* Product Details Section */}
-        <div className="w-full grid items-center justify-center">
-          <div className="mt-4 grid items-center justify-center md:mx-0 mx-3">
-            <div className="bg-green-600 w-full p-6 rounded-t-3xl rounded-lg shadow-lg">
-              <p className="md:text-4xl text-2xl font-semibold text-white">
-                {getbyId.name}
-              </p>
+            {/* Product Image */}
+            <div className="flex justify-center">
+              <img
+                src={getbyId.image}
+                alt={getbyId.name}
+                className="w-full max-w-md h-80 object-cover rounded-xl shadow-md"
+                onError={(e) => {
+                  e.target.src = "/placeholder-image.jpg";
+                }}
+              />
+            </div>
+          </div>
 
-              <div className="flex gap-2 md:mt-6 mt-4 items-center">
-                <div className="w-5 border-2 border-emerald-900 h-5 rounded-sm flex items-center justify-center bg-white">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-900"></div>
+          {/* Product Details Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="space-y-6">
+              {/* Product Name and Category */}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {getbyId.name}
+                </h1>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600 capitalize">
+                    {getbyId.category?.name || "Ice Cream"}
+                  </span>
                 </div>
-                <p className="text-white">Ice-Cream</p>
               </div>
 
-              {/* Price and Discount */}
-              <div className="flex items-center gap-3 mt-3 flex-wrap">
-                <p className="md:text-2xl text-xl text-white font-semibold">
-                  ₹{getbyId.price} / kg
-                </p>
-                <div className="px-3 py-1 border-2 border-blue-300 flex items-center justify-center rounded-full bg-blue-100">
-                  <p className="text-blue-700 font-semibold text-sm">20% off</p>
-                </div>
+              {/* Price Section */}
+              <div className="flex items-center gap-4">
+                <span className="text-3xl font-bold text-green-600">
+                  ₹{getbyId.price}
+                </span>
+                <span className="text-lg text-gray-500">per kg</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                  20% OFF
+                </span>
               </div>
 
               {/* Quantity Selector */}
-              <div className="mt-6">
-                <p className="text-white font-semibold mb-2">Quantity (kg):</p>
+              <div className="space-y-3">
+                <label className="text-lg font-semibold text-gray-900">
+                  Quantity (kg)
+                </label>
                 <div className="flex items-center gap-4">
                   <button
                     onClick={decrementQuantity}
                     disabled={quantity <= 1}
-                    className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
                   >
                     -
                   </button>
@@ -209,166 +239,154 @@ export default function SingleViewPage() {
                     onChange={handleQuantityChange}
                     min="1"
                     max={getbyId.stock}
-                    className="w-20 h-10 text-center border-2 border-green-500 rounded-lg font-semibold text-green-700"
+                    className="w-20 h-12 text-center border-2 border-indigo-500 rounded-lg font-semibold text-gray-900 text-lg"
                   />
 
                   <button
                     onClick={incrementQuantity}
                     disabled={quantity >= getbyId.stock}
-                    className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
                   >
                     +
                   </button>
 
-                  <span className="text-white text-sm">
-                    Max: {getbyId.stock} kg
+                  <span className="text-gray-500 text-sm">
+                    Max: {getbyId.stock} kg available
                   </span>
                 </div>
               </div>
 
               {/* Total Price */}
-              <div className="mt-4 p-3 bg-green-700 rounded-lg">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white">
                 <div className="flex justify-between items-center">
-                  <span className="text-white font-semibold">Total:</span>
-                  <span className="text-white text-2xl font-bold">
-                    ₹{totalPrice}
-                  </span>
+                  <span className="text-lg font-semibold">Total Amount:</span>
+                  <span className="text-2xl font-bold">₹{totalPrice}</span>
                 </div>
-                <div className="text-green-200 text-sm mt-1">
+                <div className="text-green-100 text-sm mt-1 text-center">
                   {quantity} kg × ₹{getbyId.price} = ₹{totalPrice}
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-6 flex gap-4 flex-wrap">
+              <div className="space-y-3">
                 <button
                   onClick={handleAddToCart}
-                  className="w-48 h-12 bg-orange-300 rounded-full flex items-center justify-center text-sm gap-1 cursor-pointer hover:bg-orange-400 transition-colors font-semibold"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   <span>ADD TO CART</span>
-                  <span className="mt-[-0.5rem]">+</span>
+                  <span className="text-xl">+</span>
+                </button>
+
+                <button
+                  onClick={() => window.history.back()}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold transition-colors"
+                >
+                  Continue Shopping
                 </button>
               </div>
 
-              <div className="mt-3">
-                <p className="text-green-200 text-xs">Customisable</p>
-              </div>
-            </div>
-
-            {/* Additional Details */}
-            <div className="border border-black/5 bg-neutral-800/5 w-full p-6 rounded-b-lg shadow-lg">
-              <div className="mt-4">
-                <p className="md:text-2xl text-xl font-semibold text-gray-800">
-                  Details of Icecream
-                </p>
-                <p className="md:text-base text-sm text-gray-600 mt-2 leading-relaxed">
-                  {getbyId.description}
-                </p>
-              </div>
-
-              <div className="mt-6">
-                <p className="md:text-2xl text-xl font-semibold text-gray-800">
-                  Stock Availability
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      getbyId.stock > 10
-                        ? "bg-green-500"
-                        : getbyId.stock > 5
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
-                  ></div>
-                  <p
-                    className={`md:text-base text-sm font-semibold ${
-                      getbyId.stock > 10
-                        ? "text-green-600"
-                        : getbyId.stock > 5
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {getbyId.stock} {getbyId.stock === 1 ? "kg" : "kgs"} left -{" "}
-                    {getbyId.stock > 10
-                      ? "In Stock"
+              {/* Stock Status */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    getbyId.stock > 10
+                      ? "bg-green-500"
                       : getbyId.stock > 5
-                      ? "Low Stock"
-                      : "Hurry!"}
-                  </p>
-                </div>
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}
+                ></div>
+                <span
+                  className={`font-semibold ${
+                    getbyId.stock > 10
+                      ? "text-green-600"
+                      : getbyId.stock > 5
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {getbyId.stock} {getbyId.stock === 1 ? "kg" : "kgs"} available
+                  •{" "}
+                  {getbyId.stock > 10
+                    ? "In Stock"
+                    : getbyId.stock > 5
+                    ? "Low Stock"
+                    : "Almost Gone!"}
+                </span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Related Products Section */}
-      <div className="w-full mt-12 px-4">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">
-          You Might Also Like
-        </h2>
+        {/* Product Description Section */}
+        <div className="mt-8 bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Product Details
+          </h2>
+          <p className="text-gray-600 leading-relaxed text-lg">
+            {getbyId.description}
+          </p>
+        </div>
 
-        {/* Add related products here */}
+        {/* Related Products Section */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-3">
+            You Might Also Like
+          </h2>
 
-        {/* Products Grid */}
-        <div className="grid md:grid-cols-5 gap-3 mt-5 w-full px-4">
-          {allIcecream.length > 0 ? (
-            allIcecream.map((item, index) => (
-              <div
-                key={index}
-                className="relative md:w-[17rem] w-[22rem] rounded-xl p-1 md:h-[20rem] grid grid-cols-2 md:grid-cols-none cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white"
-              >
-                <div className="md:h-[15rem] md:w-full w-[80%] h-full mx-5 md:mx-0">
-                  <img
-                    src={`http://localhost:3000${item.image}`}
-                    alt="icecream"
-                    className="object-cover w-full h-full rounded-md"
-                  />
-                </div>
-                <div className="grid md:grid-cols-2">
-                  <div className="text-center md:text-start mt-3 md:px-3">
-                    <p className="font-semibold text-[1rem] line-clamp-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {allIcecream
+              .filter((item) => item._id !== getbyId._id) // Exclude current product
+              .slice(0, 5) // Show only 5 related products
+              .map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group"
+                  onClick={() => nav(`/singleview/${item._id}`)}
+                >
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src = "/placeholder-image.jpg";
+                      }}
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 line-clamp-1 mb-2">
                       {item.name}
-                    </p>
-                    <p className="text-[0.8rem] text-green-600 font-medium">
-                      ${item.price} per 1/kg
-                    </p>
-                    {item.stock && (
-                      <p className="text-[0.7rem] text-gray-500">
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-600 font-bold text-lg">
+                        ₹{item.price}
+                      </span>
+                      <span className="text-gray-500 text-sm">per kg</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm text-gray-500">
                         Stock: {item.stock}
-                      </p>
-                    )}
-                  </div>
-                  <div
-                    className="md:absolute flex items-center justify-center w-[5rem] h-[2rem] md:top-[85%] left-[60%] bg-orange-300 rounded-md mx-12 md:mx-0 cursor-pointer hover:bg-orange-400 "
-                    onClick={() => nav(`/singleview/${item._id}`)}
-                  >
-                    <p className="text-[0.8rem] font-medium">View</p>
+                      </span>
+                      <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
+                        View Details →
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <div className="text-6xl mb-4">{searchQuery ? "🔍" : "🍦"}</div>
+              ))}
+          </div>
+
+          {allIcecream.filter((item) => item._id !== getbyId._id).length ===
+            0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🍦</div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                {searchQuery ? "No products found" : "No products found"}
+                No related products found
               </h3>
-              <p className="text-gray-500 mb-4">
-                {searchQuery
-                  ? `No products found for "${searchQuery}". Try a different search term.`
-                  : "Try selecting a different category or check back later."}
+              <p className="text-gray-500">
+                Check back later for more delicious ice cream options!
               </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  filterByCategory("all");
-                }}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Show All Products
-              </button>
             </div>
           )}
         </div>

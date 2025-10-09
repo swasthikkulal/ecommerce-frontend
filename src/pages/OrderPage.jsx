@@ -36,6 +36,7 @@ const OrdersPage = () => {
       console.log(error.message);
     }
   };
+
   // Fetch orders data
   useEffect(() => {
     const fetchOrders = async () => {
@@ -67,6 +68,23 @@ const OrdersPage = () => {
     fetchOrders();
   }, [token]);
 
+  // Helper function to get correct image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/placeholder-image.jpg";
+
+    // If it's already a full URL (Cloudinary), use it directly
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+
+    // If it's a relative path, add localhost prefix
+    if (imagePath.startsWith("/")) {
+      return `http://localhost:3000${imagePath}`;
+    }
+
+    return "/placeholder-image.jpg";
+  };
+
   // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -80,7 +98,7 @@ const OrdersPage = () => {
 
   // Get status with default value
   const getOrderStatus = (order) => {
-    return order.status || "pending_payment"; // Default status
+    return order.status || "pending_payment";
   };
 
   // Get status color
@@ -106,7 +124,7 @@ const OrdersPage = () => {
 
   // Format status text with safe handling
   const formatStatus = (status) => {
-    if (!status) return "Pending Payment"; // Default status text
+    if (!status) return "Pending Payment";
 
     try {
       return status
@@ -114,8 +132,7 @@ const OrdersPage = () => {
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
     } catch (error) {
-      console.error("Error formatting status:", error, "Status:", status);
-      return "Pending Payment"; // Fallback
+      return "Pending Payment";
     }
   };
 
@@ -170,7 +187,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 relative">
+    <div className="min-h-screen bg-gray-50 py-8 relative mt-[3%]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-[10%]">
         <ArrowLeft
           className="w-6 h-6 text-gray-700 absolute top-[5%] left-[5%] cursor-pointer"
@@ -189,7 +206,7 @@ const OrdersPage = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className=" rounded-lg  p-6">
+          <div className="rounded-lg p-6">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <span className="text-blue-600 text-xl">📦</span>
@@ -205,56 +222,12 @@ const OrdersPage = () => {
             </div>
           </div>
 
-          {/* <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <span className="text-yellow-600 text-xl">⏳</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Pending Payment
-                </p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.pending}
-                </p>
-              </div>
-            </div>
-          </div> */}
-
-          {/* <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <span className="text-blue-600 text-xl">✅</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Confirmed</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.confirmed}
-                </p>
-              </div>
-            </div>
-          </div> */}
-
-          {/* <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <span className="text-green-600 text-xl">🚚</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Delivered</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.delivered}
-                </p>
-              </div>
-            </div>
-          </div> */}
-
-          <div className=" rounded-lg  p-6 ]">
+          <div className="rounded-lg p-6">
             <div className="flex items-center">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <span className="text-purple-600 text-xl">💰</span>
               </div>
-              <div className="ml-6 ]">
+              <div className="ml-6">
                 <p className="text-sm font-medium text-gray-600">
                   Total Revenue
                 </p>
@@ -269,22 +242,6 @@ const OrdersPage = () => {
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
-            {/* <div className="flex gap-4">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="all">All Status</option>
-                <option value="pending_payment">Pending Payment</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div> */}
-
             <div className="flex-1 max-w-md">
               <input
                 type="text"
@@ -321,9 +278,6 @@ const OrdersPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
@@ -368,14 +322,7 @@ const OrdersPage = () => {
                             <div className="flex-shrink-0 h-10 w-10">
                               <img
                                 className="h-10 w-10 rounded-lg object-cover bg-gray-100"
-                                src={`http://localhost:3000${
-                                  order.products?.[0]?.image ||
-                                  "/placeholder-image.jpg"
-                                }`}
-                                // src={
-                                //   order.products?.[0]?.image ||
-                                //   "/placeholder-image.jpg"
-                                // }
+                                src={getImageUrl(order.products?.[0]?.image)}
                                 alt={order.products?.[0]?.name || "Product"}
                                 onError={(e) => {
                                   e.target.src = "/placeholder-image.jpg";
@@ -407,13 +354,6 @@ const OrdersPage = () => {
                             + tax
                           </div>
                         </td>
-                        {/* <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}
-                          >
-                            {statusText}
-                          </span>
-                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {order.createdAt
                             ? formatDate(order.createdAt)
@@ -432,7 +372,7 @@ const OrdersPage = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center">
+                    <td colSpan="6" className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         <svg
                           className="mx-auto h-12 w-12 text-gray-400"
@@ -496,16 +436,6 @@ const OrdersPage = () => {
                             : "N/A"}
                         </span>
                       </div>
-                      {/* <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                            getOrderStatus(selectedOrder)
-                          )}`}
-                        >
-                          {formatStatus(getOrderStatus(selectedOrder))}
-                        </span>
-                      </div> */}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Total Items:</span>
                         <span className="font-medium">
@@ -611,8 +541,7 @@ const OrdersPage = () => {
                         className="flex items-center space-x-4 bg-white border rounded-lg p-4"
                       >
                         <img
-                          // src={product.image}
-                          src={`http://localhost:3000${product.image}`}
+                          src={getImageUrl(product.image)}
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded-lg bg-gray-100"
                           onError={(e) => {
@@ -653,9 +582,6 @@ const OrdersPage = () => {
                   >
                     Close
                   </button>
-                  {/* <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
-                    Update Status
-                  </button> */}
                 </div>
               </div>
             </div>

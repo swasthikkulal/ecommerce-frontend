@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import PaymentButton from "../components/PaymentButton";
 import config from "../config";
+
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,27 +16,101 @@ const CartPage = () => {
     pincode: "",
     country: "India",
   });
-  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(true);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [hasSavedAddress, setHasSavedAddress] = useState(false);
 
-  const [canCheckout, setCanCheckout] = useState(false);
+  // Get user-specific storage key
+  const getAddressKey = () => {
+    const token = localStorage.getItem("token");
+    let userIdentifier = "anonymous";
 
-  // Fetch cart items
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        userIdentifier = payload.userId || payload.id || "unknown";
+      } catch (error) {
+        console.log("Could not extract user ID from token");
+      }
+    }
+
+    return `userAddress_${userIdentifier}`;
+  };
+
+  // Fetch cart items and address
   useEffect(() => {
     fetchCartItems();
     checkPaymentStatus();
+    loadSavedAddress();
   }, []);
+
+  // Load saved address from localStorage with user-specific key
+  const loadSavedAddress = () => {
+    const addressKey = getAddressKey();
+    const savedAddress = localStorage.getItem(addressKey);
+
+    if (savedAddress) {
+      try {
+        const parsedAddress = JSON.parse(savedAddress);
+        setAddress(parsedAddress);
+        setHasSavedAddress(true);
+      } catch (error) {
+        console.error("Error parsing saved address:", error);
+      }
+    }
+  };
+
+  // Save address to localStorage with user-specific key
+  const saveAddressToLocalStorage = (addressData) => {
+    const addressKey = getAddressKey();
+    localStorage.setItem(addressKey, JSON.stringify(addressData));
+    setHasSavedAddress(true);
+  };
+
+  // Clear saved address for current user
+  const clearSavedAddress = () => {
+    const addressKey = getAddressKey();
+    localStorage.removeItem(addressKey);
+    setAddress({
+      fullName: "",
+      phone: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      state: "",
+      pincode: "",
+      country: "India",
+    });
+    setHasSavedAddress(false);
+  };
+
+  // Clear cart after order placement
+  const handleDeleteCartAfterOrder = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${config.API_BASE_URL}/orders/clearcart`, {
+        method: "DELETE",
+        headers: {
+          "auth-token": token,
+        },
+      });
+      if (response.ok) {
+        console.log("Cart cleared successfully after order placement");
+      } else {
+        console.error("Failed to clear cart after order placement");
+      }
+    } catch (error) {
+      console.error("Error clearing cart after order placement:", error);
+    }
+  };
 
   // Check payment status from localStorage
   const checkPaymentStatus = () => {
-    const paymentStatus = localStorage.getItem("paymentCompleted");
-    const successStatus = localStorage.getItem("success");
+    const paymentKey = `paymentCompleted_${getAddressKey()}`;
+    const paymentStatus = localStorage.getItem(paymentKey);
 
-    console.log("Payment Status from localStorage:", paymentStatus);
-    console.log("Success Status from localStorage:", successStatus);
-
-    if (paymentStatus === "true" || successStatus === "true") {
+    if (paymentStatus === "true") {
       setIsPaymentCompleted(true);
-      setCanCheckout(true);
     }
   };
 
@@ -51,25 +126,30 @@ const CartPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("API Response:", data);
+        console.log("Cart API Response:", data);
 
+        // Simplified cart items extraction - adjust based on your actual API response
         if (data.data && Array.isArray(data.data)) {
+          // This is a simplified version - adjust according to your actual API response structure
           const cartProducts = data.data.flatMap((order) =>
-            order.status === "pending"
+            order.products
               ? order.products.map((item) => ({
-                  ...item.productId,
-                  quantity: item.quantity,
+                  ...item,
                   orderId: order._id,
-                  cartItemId: item._id,
-                  orderTotal: order.total,
+                  _id: item.productId?._id || item._id,
+                  name: item.productId?.name || item.name,
+                  price: item.productId?.price || item.price,
+                  image: item.productId?.image || item.image,
+                  stock: item.productId?.stock || 10, // Default stock if not available
+                  quantity: item.quantity || 1,
                 }))
               : []
           );
 
-          console.log("Cart Products:", cartProducts);
-          setCartItems(cartProducts);
+          console.log("Processed Cart Products:", cartProducts);
+          setCartItems(cartProducts.length > 0 ? cartProducts : []);
         } else {
-          console.log("No orders found or invalid data structure");
+          console.log("No orders found");
           setCartItems([]);
         }
       } else {
@@ -84,7 +164,7 @@ const CartPage = () => {
     }
   };
 
-  // Handle quantity increase (Frontend only)
+  // Handle quantity increase
   const handleIncreaseQuantity = (
     orderId,
     productId,
@@ -96,7 +176,6 @@ const CartPage = () => {
       return;
     }
 
-    // Update local state only
     setCartItems((prevItems) =>
       prevItems.map((item) =>
         item.orderId === orderId && item._id === productId
@@ -106,15 +185,13 @@ const CartPage = () => {
     );
   };
 
-  // Handle quantity decrease (Frontend only)
+  // Handle quantity decrease
   const handleDecreaseQuantity = (orderId, productId, currentQuantity) => {
     if (currentQuantity <= 1) {
-      // If quantity is 1, remove the item instead
       handleDelete(orderId, productId);
       return;
     }
 
-    // Update local state only
     setCartItems((prevItems) =>
       prevItems.map((item) =>
         item.orderId === orderId && item._id === productId
@@ -124,7 +201,7 @@ const CartPage = () => {
     );
   };
 
-  // Handle direct quantity input (Frontend only)
+  // Handle direct quantity input
   const handleQuantityChange = (orderId, productId, newQuantity, stock) => {
     if (newQuantity === "" || newQuantity < 1) {
       return;
@@ -135,7 +212,6 @@ const CartPage = () => {
       return;
     }
 
-    // Update local state only
     setCartItems((prevItems) =>
       prevItems.map((item) =>
         item.orderId === orderId && item._id === productId
@@ -145,44 +221,57 @@ const CartPage = () => {
     );
   };
 
-  // Handle payment completion from PaymentButton
+  // Handle payment completion
   const handlePaymentSuccess = () => {
     console.log("Payment success callback triggered");
     setIsPaymentCompleted(true);
     setIsProcessingPayment(false);
-    setCanCheckout(true);
 
-    // Set multiple flags to ensure checkout works
-    localStorage.setItem("paymentCompleted", "true");
-    localStorage.setItem("success", "true");
-
-    console.log("Payment completed, checkout should be enabled now");
+    const paymentKey = `paymentCompleted_${getAddressKey()}`;
+    localStorage.setItem(paymentKey, "true");
   };
 
   const handlePaymentProcessing = () => {
     console.log("Payment processing started");
     setIsProcessingPayment(true);
-    setCanCheckout(false);
   };
 
   const handlePaymentError = () => {
     console.log("Payment error occurred");
     setIsProcessingPayment(false);
     setIsPaymentCompleted(false);
-    setCanCheckout(false);
-    localStorage.setItem("paymentCompleted", "false");
-    localStorage.setItem("success", "false");
-  };
 
+    const paymentKey = `paymentCompleted_${getAddressKey()}`;
+    localStorage.setItem(paymentKey, "false");
+  };
+  // Send cart state to backend after order placement
+  // const handleSendCartAfterOrder = async () => {
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const response = await fetch(`${config.API_BASE_URL}/orders/updatecart`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         "auth-token": token,
+  //       },
+  //       body: JSON.stringify({ cartItems }),
+  //     });
+  //     if (response.ok) {
+  //       console.log("Cart state sent successfully after order placement");
+  //     }
+  //     else {
+  //       console.error("Failed to send cart state after order placement");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error sending cart state after order placement:", error);
+  //   }
+  // }
   // Handle delete item from cart
   const handleDelete = async (orderId, productId) => {
-    console.log("Deleting item - Order ID:", orderId, "Product ID:", productId);
-
     try {
       const token = localStorage.getItem("token");
-
       const response = await fetch(
-        `${config.API_BASE_URL}/orders/remove-item/${orderId}/${productId}`,
+        `${config.API_BASE_URL}/orders/delete/${orderId}`,
         {
           method: "DELETE",
           headers: {
@@ -194,48 +283,18 @@ const CartPage = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log("Item removed successfully:", result);
-        alert("Item removed from cart successfully!");
-        fetchCartItems();
-      } else {
-        await handleDeleteOrder(orderId);
-      }
-    } catch (error) {
-      console.error("Error removing item:", error);
-      await handleDeleteOrder(orderId);
-    }
-  };
-
-  // Fallback: Delete entire order
-  const handleDeleteOrder = async (orderId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:3000/api/orders/delete/${orderId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "auth-token": token,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        console.log("Order deleted successfully:", result);
         alert("Item removed from cart successfully!");
         fetchCartItems();
       } else {
         alert(`Failed to remove item: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error deleting order:", error);
+      console.error("Error removing item:", error);
       alert("Network error. Please try again.");
     }
   };
 
-  // Calculate totals based on current quantities
+  // Calculate totals
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -244,7 +303,6 @@ const CartPage = () => {
   const tax = subtotal * 0.18;
   const total = subtotal + shipping + tax;
 
-  // Calculate item totals for display
   const getItemTotal = (price, quantity) => {
     return (price * quantity).toFixed(2);
   };
@@ -256,15 +314,51 @@ const CartPage = () => {
 
   // Handle address change
   const handleAddressChange = (e) => {
-    setAddress({
+    const newAddress = {
       ...address,
       [e.target.name]: e.target.value,
-    });
+    };
+    setAddress(newAddress);
+  };
+
+  // Save address when user updates it
+  const handleSaveAddress = () => {
+    if (
+      !address.fullName ||
+      !address.phone ||
+      !address.addressLine1 ||
+      !address.city ||
+      !address.state ||
+      !address.pincode
+    ) {
+      alert("Please fill in all required address fields");
+      return;
+    }
+
+    saveAddressToLocalStorage(address);
+    alert(
+      "Address saved successfully! It will be auto-filled for your future orders."
+    );
   };
 
   // POST Checkout - Create New Order
   const handleCheckout = async () => {
-    // Double check if checkout should be allowed
+    if (!isPaymentCompleted) {
+      alert("Please complete the payment first");
+      return;
+    }
+
+    if (
+      !address.fullName ||
+      !address.phone ||
+      !address.addressLine1 ||
+      !address.city ||
+      !address.state ||
+      !address.pincode
+    ) {
+      alert("Please fill in all required address fields before checkout");
+      return;
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -275,7 +369,7 @@ const CartPage = () => {
           productId: item._id,
           name: item.name,
           price: item.price,
-          quantity: item.quantity, // This will use the updated frontend quantity
+          quantity: item.quantity,
           image: item.image,
         })),
         total: total,
@@ -299,15 +393,20 @@ const CartPage = () => {
 
       if (response.ok && result.success) {
         console.log("New order created successfully:", result);
-        alert("Address created successfully.");
+        alert("Order placed successfully!");
 
-        // Clear localStorage flags
-        localStorage.removeItem("paymentCompleted");
-        localStorage.removeItem("success");
-        localStorage.setItem("currentOrderId", result.data._id);
+        // Save address for future use
+        saveAddressToLocalStorage(address);
 
-        // // Redirect to order confirmation page
-        // window.location.href = "/orderplaced";
+        // Clear payment flags
+        const paymentKey = `paymentCompleted_${getAddressKey()}`;
+        localStorage.removeItem(paymentKey);
+
+        // Clear cart and redirect
+        setCartItems([]);
+        // handleSendCartAfterOrder();
+        handleDeleteCartAfterOrder();
+        window.location.href = "/orderplaced";
       } else {
         alert(`Checkout failed: ${result.message || "Unknown error"}`);
       }
@@ -316,8 +415,6 @@ const CartPage = () => {
       alert("Network error during checkout. Please try again.");
     }
   };
-
-  // Debug: Log state changes
 
   if (loading) {
     return (
@@ -372,85 +469,86 @@ const CartPage = () => {
                 {cartItems.map((item) => (
                   <div
                     key={`${item.orderId}-${item._id}`}
-                    className="p-6 flex items-center justify-between"
+                    className="p-6 flex items-center space-x-4"
                   >
-                    <div className="flex items-center space-x-4 flex-1">
-                      <img
-                        src={`http://localhost:3000${item.image}`}
-                        alt={item.name}
-                        className="flex-none w-20 h-20 rounded-lg object-cover bg-gray-100"
-                      />
+                    <img
+                      src={item.image || "/placeholder-image.jpg"}
+                      alt={item.name}
+                      className="flex-none w-20 h-20 rounded-lg object-cover bg-gray-100"
+                      onError={(e) => {
+                        e.target.src = "/placeholder-image.jpg";
+                      }}
+                    />
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
-                          {item.name}
-                        </h3>
-                        <p className="text-lg font-semibold text-indigo-600 mt-1">
-                          ₹{item.price} per kg
-                        </p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {item.name}
+                      </h3>
+                      <p className="text-lg font-semibold text-indigo-600 mt-1">
+                        ₹{item.price} per kg
+                      </p>
 
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-3 mt-3">
-                          <span className="text-sm text-gray-700 font-medium">
-                            Quantity:
-                          </span>
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-3 mt-3">
+                        <span className="text-sm text-gray-700 font-medium">
+                          Quantity:
+                        </span>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                handleDecreaseQuantity(
-                                  item.orderId,
-                                  item._id,
-                                  item.quantity
-                                )
-                              }
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={item.quantity <= 1}
-                            >
-                              -
-                            </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              handleDecreaseQuantity(
+                                item.orderId,
+                                item._id,
+                                item.quantity
+                              )
+                            }
+                            className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={item.quantity <= 1}
+                          >
+                            -
+                          </button>
 
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleQuantityChange(
-                                  item.orderId,
-                                  item._id,
-                                  e.target.value,
-                                  item.stock
-                                )
-                              }
-                              className="w-16 h-8 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                              min="1"
-                              max={item.stock}
-                            />
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleQuantityChange(
+                                item.orderId,
+                                item._id,
+                                e.target.value,
+                                item.stock
+                              )
+                            }
+                            className="w-16 h-8 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            min="1"
+                            max={item.stock}
+                          />
 
-                            <button
-                              onClick={() =>
-                                handleIncreaseQuantity(
-                                  item.orderId,
-                                  item._id,
-                                  item.quantity,
-                                  item.stock
-                                )
-                              }
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={item.quantity >= item.stock}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <span className="text-sm text-gray-500">
-                            Max: {item.stock} kg
-                          </span>
+                          <button
+                            onClick={() =>
+                              handleIncreaseQuantity(
+                                item.orderId,
+                                item._id,
+                                item.quantity,
+                                item.stock
+                              )
+                            }
+                            className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={item.quantity >= item.stock}
+                          >
+                            +
+                          </button>
                         </div>
 
-                        <p className="text-sm text-gray-500 mt-2">
-                          Stock: {item.stock} kg available
-                        </p>
+                        <span className="text-sm text-gray-500">
+                          Max: {item.stock} kg
+                        </span>
                       </div>
+
+                      <p className="text-sm text-gray-500 mt-2">
+                        Stock: {item.stock} kg available
+                      </p>
                     </div>
 
                     <div className="flex flex-col items-end space-y-3">
@@ -504,13 +602,39 @@ const CartPage = () => {
           </div>
 
           {/* Order Summary & Address Section */}
-          <div className="mt-8 lg:mt-0 lg:col-span-5 relative">
+          <div className="mt-8 lg:mt-0 lg:col-span-5">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-8">
               {/* Delivery Address */}
               <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Delivery Address
-                </h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Delivery Address
+                  </h2>
+                  {hasSavedAddress && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveAddress}
+                        className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      >
+                        Update
+                      </button>
+                      <button
+                        onClick={clearSavedAddress}
+                        className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {hasSavedAddress && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-700">
+                      ✅ Using your saved address
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -611,11 +735,21 @@ const CartPage = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Save Address Button */}
+                  {!hasSavedAddress && (
+                    <button
+                      onClick={handleSaveAddress}
+                      className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition duration-200"
+                    >
+                      Save Address for Future Orders
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Order Summary */}
-              <div className="p-6 pt-[10%]">
+              <div className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Order Summary
                 </h2>
@@ -658,7 +792,14 @@ const CartPage = () => {
                   )}
                 </div>
 
-                {/* Payment Status Indicator */}
+                {/* Payment Status */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-700">
+                    {isPaymentCompleted
+                      ? "✅ Payment Completed"
+                      : "⏳ Payment Pending"}
+                  </p>
+                </div>
 
                 <div className="mt-6 space-y-3">
                   <PaymentButton
@@ -670,13 +811,20 @@ const CartPage = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    className="absolute w-[90%] py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 bg-blue-500 top-[50%] left-[5%] "
+                    disabled={!isPaymentCompleted}
+                    className={`w-full py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ${
+                      isPaymentCompleted
+                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                   >
-                    Update the address
+                    {isPaymentCompleted
+                      ? "Place Order"
+                      : "Complete Payment First"}
                   </button>
 
                   <Link
-                    to="/products"
+                    to="/"
                     className="w-full bg-white text-indigo-600 border border-indigo-600 py-3 px-4 rounded-lg font-semibold hover:bg-indigo-50 flex items-center justify-center transition duration-200"
                   >
                     Continue Shopping

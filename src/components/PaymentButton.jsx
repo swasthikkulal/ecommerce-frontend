@@ -41,7 +41,7 @@ const PaymentButton = () => {
           Order ID: ${response.razorpay_order_id}`);
 
           localStorage.setItem("success", true);
-          window.location.href = "/orderplaced";
+          window.location.href = "/cartpage";
         },
         prefill: {
           name: "Raj Swasthik",

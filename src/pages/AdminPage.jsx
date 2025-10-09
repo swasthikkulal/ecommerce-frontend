@@ -222,7 +222,13 @@ const AdminPage = () => {
             📊 Dashboard
           </button>
           <button
-            onClick={() => nav("/addproduct")}
+            onClick={() => nav("/categorymanager")}
+            className="text-lg font-medium text-gray-700 hover:text-green-600 transition-colors text-left p-3 rounded-lg hover:bg-gray-100"
+          >
+            ➕ Add Category
+          </button>
+          <button
+            onClick={() => nav("/productmanager")}
             className="text-lg font-medium text-gray-700 hover:text-green-600 transition-colors text-left p-3 rounded-lg hover:bg-gray-100"
           >
             ➕ Add Products
@@ -334,7 +340,7 @@ const AdminPage = () => {
                 {/* Product Image - FIXED URL */}
                 <div className="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                   <img
-                    src={`http://localhost:3000${item.image}`}
+                    src={item.image}
                     alt={item.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
