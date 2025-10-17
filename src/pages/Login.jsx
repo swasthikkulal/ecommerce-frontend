@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -27,8 +28,10 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         if (data.user.role === "admin") {
+          toast.success("Welcome Admin!");
           navigate("/adminpage");
         } else {
+          toast.success("Welcome Back!");
           navigate("/");
         }
       } else {

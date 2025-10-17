@@ -1,6 +1,8 @@
 import React from "react";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify"; // ✅ import ToastContainer
+import "react-toastify/dist/ReactToastify.css";
 
 import Nav from "./components/Nav";
 import Home from "./components/Home";
@@ -22,6 +24,7 @@ import CategoryNav from "./components/CategoryNav";
 import CategoryProducts from "./pages/CategoryProducts";
 import CategoryManager from "./components/CategoryManager";
 import ProductManager from "./components/ProductManager";
+import PaymentsPage from "./pages/PaymentsPage";
 
 function App() {
   return (
@@ -37,6 +40,7 @@ function App() {
           />
           <Route path="/categorymanager" element={<CategoryManager />} />
           <Route path="/productmanager" element={<ProductManager />} />
+          <Route path="/paymentpage" element={<PaymentsPage />} />
 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -53,6 +57,7 @@ function App() {
           <Route path="/orderpage" element={<OrdersPage />} />
         </Routes>
         <Footer />
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </Router>
   );

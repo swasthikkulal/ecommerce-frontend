@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import PaymentButton from "../components/PaymentButton";
+import { Link, useNavigate } from "react-router-dom";
 import config from "../config";
+import { toast } from "react-toastify";
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [address, setAddress] = useState({
@@ -16,8 +17,6 @@ const CartPage = () => {
     pincode: "",
     country: "India",
   });
-  const [isPaymentCompleted, setIsPaymentCompleted] = useState(true);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [hasSavedAddress, setHasSavedAddress] = useState(false);
 
   // Get user-specific storage key
@@ -37,10 +36,26 @@ const CartPage = () => {
     return `userAddress_${userIdentifier}`;
   };
 
+  // Calculate totals
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const shipping = subtotal > 500 ? 0 : 40;
+  const tax = subtotal * 0.18;
+  const total = subtotal + shipping + tax;
+
+  // Store total in localStorage only when cart has items and total is valid
+  useEffect(() => {
+    if (cartItems.length > 0 && total > 0) {
+      console.log("💰 Storing total in localStorage:", total.toFixed(2));
+      localStorage.setItem("total", total.toFixed(2));
+    }
+  }, [cartItems, total]);
+
   // Fetch cart items and address
   useEffect(() => {
     fetchCartItems();
-    checkPaymentStatus();
     loadSavedAddress();
   }, []);
 
@@ -84,33 +99,77 @@ const CartPage = () => {
     setHasSavedAddress(false);
   };
 
-  // Clear cart after order placement
-  const handleDeleteCartAfterOrder = async () => {
+  // POST Checkout - Create New Order
+  const handleCheckout = async () => {
+    if (
+      !address.fullName ||
+      !address.phone ||
+      !address.addressLine1 ||
+      !address.city ||
+      !address.state ||
+      !address.pincode
+    ) {
+      alert("Please fill in all required address fields before checkout");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${config.API_BASE_URL}/orders/clearcart`, {
-        method: "DELETE",
+
+      // Store the final total in localStorage right before checkout
+      console.log("💰 Final total before checkout:", total.toFixed(2));
+      localStorage.setItem("total", total.toFixed(2));
+
+      // Verify it was stored correctly
+      const storedTotal = localStorage.getItem("total");
+      console.log("✅ Verified stored total:", storedTotal);
+
+      const checkoutData = {
+        address: address,
+        cartItems: cartItems.map((item) => ({
+          productId: item._id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+        })),
+        total: parseFloat(total.toFixed(2)),
+        subtotal: subtotal,
+        shipping: shipping,
+        tax: tax,
+      };
+
+      console.log("Sending POST checkout data:", checkoutData);
+
+      const response = await fetch(`${config.API_BASE_URL}/checkout/order`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "auth-token": token,
         },
+        body: JSON.stringify(checkoutData),
       });
-      if (response.ok) {
-        console.log("Cart cleared successfully after order placement");
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log("New order created successfully:", result);
+        toast.success("processing for payment!");
+
+        // Save address for future use
+        saveAddressToLocalStorage(address);
+
+        // Clear cart and redirect to payment page
+        setCartItems([]);
+
+        // Navigate to payment page - the total is already stored in localStorage
+        window.location.href = "/paymentpage";
       } else {
-        console.error("Failed to clear cart after order placement");
+        alert(`Checkout failed: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error clearing cart after order placement:", error);
-    }
-  };
-
-  // Check payment status from localStorage
-  const checkPaymentStatus = () => {
-    const paymentKey = `paymentCompleted_${getAddressKey()}`;
-    const paymentStatus = localStorage.getItem(paymentKey);
-
-    if (paymentStatus === "true") {
-      setIsPaymentCompleted(true);
+      console.error("Error during checkout:", error);
+      alert("Network error during checkout. Please try again.");
     }
   };
 
@@ -128,9 +187,7 @@ const CartPage = () => {
         const data = await response.json();
         console.log("Cart API Response:", data);
 
-        // Simplified cart items extraction - adjust based on your actual API response
         if (data.data && Array.isArray(data.data)) {
-          // This is a simplified version - adjust according to your actual API response structure
           const cartProducts = data.data.flatMap((order) =>
             order.products
               ? order.products.map((item) => ({
@@ -140,7 +197,7 @@ const CartPage = () => {
                   name: item.productId?.name || item.name,
                   price: item.productId?.price || item.price,
                   image: item.productId?.image || item.image,
-                  stock: item.productId?.stock || 10, // Default stock if not available
+                  stock: item.productId?.stock || 10,
                   quantity: item.quantity || 1,
                 }))
               : []
@@ -221,96 +278,9 @@ const CartPage = () => {
     );
   };
 
-  // Handle payment completion
-  const handlePaymentSuccess = () => {
-    console.log("Payment success callback triggered");
-    setIsPaymentCompleted(true);
-    setIsProcessingPayment(false);
-
-    const paymentKey = `paymentCompleted_${getAddressKey()}`;
-    localStorage.setItem(paymentKey, "true");
-  };
-
-  const handlePaymentProcessing = () => {
-    console.log("Payment processing started");
-    setIsProcessingPayment(true);
-  };
-
-  const handlePaymentError = () => {
-    console.log("Payment error occurred");
-    setIsProcessingPayment(false);
-    setIsPaymentCompleted(false);
-
-    const paymentKey = `paymentCompleted_${getAddressKey()}`;
-    localStorage.setItem(paymentKey, "false");
-  };
-  // Send cart state to backend after order placement
-  // const handleSendCartAfterOrder = async () => {
-  //   try {
-  //     const token = localStorage.getItem("token");
-  //     const response = await fetch(`${config.API_BASE_URL}/orders/updatecart`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "auth-token": token,
-  //       },
-  //       body: JSON.stringify({ cartItems }),
-  //     });
-  //     if (response.ok) {
-  //       console.log("Cart state sent successfully after order placement");
-  //     }
-  //     else {
-  //       console.error("Failed to send cart state after order placement");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error sending cart state after order placement:", error);
-  //   }
-  // }
-  // Handle delete item from cart
-  const handleDelete = async (orderId, productId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${config.API_BASE_URL}/orders/delete/${orderId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "auth-token": token,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        alert("Item removed from cart successfully!");
-        fetchCartItems();
-      } else {
-        alert(`Failed to remove item: ${result.message || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("Error removing item:", error);
-      alert("Network error. Please try again.");
-    }
-  };
-
-  // Calculate totals
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const shipping = subtotal > 500 ? 0 : 40;
-  const tax = subtotal * 0.18;
-  const total = subtotal + shipping + tax;
-
   const getItemTotal = (price, quantity) => {
     return (price * quantity).toFixed(2);
   };
-
-  // Store total in localStorage
-  useEffect(() => {
-    localStorage.setItem("total", total.toString());
-  }, [total]);
 
   // Handle address change
   const handleAddressChange = (e) => {
@@ -341,78 +311,31 @@ const CartPage = () => {
     );
   };
 
-  // POST Checkout - Create New Order
-  const handleCheckout = async () => {
-    if (!isPaymentCompleted) {
-      alert("Please complete the payment first");
-      return;
-    }
-
-    if (
-      !address.fullName ||
-      !address.phone ||
-      !address.addressLine1 ||
-      !address.city ||
-      !address.state ||
-      !address.pincode
-    ) {
-      alert("Please fill in all required address fields before checkout");
-      return;
-    }
-
+  // Handle delete item from cart
+  const handleDelete = async (orderId, productId) => {
     try {
       const token = localStorage.getItem("token");
-
-      const checkoutData = {
-        address: address,
-        cartItems: cartItems.map((item) => ({
-          productId: item._id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
-        total: total,
-        subtotal: subtotal,
-        shipping: shipping,
-        tax: tax,
-      };
-
-      console.log("Sending POST checkout data:", checkoutData);
-
-      const response = await fetch(`${config.API_BASE_URL}/checkout/order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token,
-        },
-        body: JSON.stringify(checkoutData),
-      });
+      const response = await fetch(
+        `${config.API_BASE_URL}/orders/delete/${orderId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "auth-token": token,
+          },
+        }
+      );
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log("New order created successfully:", result);
-        alert("Order placed successfully!");
-
-        // Save address for future use
-        saveAddressToLocalStorage(address);
-
-        // Clear payment flags
-        const paymentKey = `paymentCompleted_${getAddressKey()}`;
-        localStorage.removeItem(paymentKey);
-
-        // Clear cart and redirect
-        setCartItems([]);
-        // handleSendCartAfterOrder();
-        handleDeleteCartAfterOrder();
-        window.location.href = "/orderplaced";
+        toast.success("Item removed from cart successfully!");
+        fetchCartItems();
       } else {
-        alert(`Checkout failed: ${result.message || "Unknown error"}`);
+        alert(`Failed to remove item: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error during checkout:", error);
-      alert("Network error during checkout. Please try again.");
+      console.error("Error removing item:", error);
+      alert("Network error. Please try again.");
     }
   };
 
@@ -792,35 +715,13 @@ const CartPage = () => {
                   )}
                 </div>
 
-                {/* Payment Status */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-700">
-                    {isPaymentCompleted
-                      ? "✅ Payment Completed"
-                      : "⏳ Payment Pending"}
-                  </p>
-                </div>
-
                 <div className="mt-6 space-y-3">
-                  <PaymentButton
-                    onPaymentSuccess={handlePaymentSuccess}
-                    onPaymentProcessing={handlePaymentProcessing}
-                    onPaymentError={handlePaymentError}
-                  />
-
-                  {/* Checkout Button */}
+                  {/* Process Payment Button */}
                   <button
                     onClick={handleCheckout}
-                    disabled={!isPaymentCompleted}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ${
-                      isPaymentCompleted
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
+                    className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-600 flex items-center justify-center transition duration-200"
                   >
-                    {isPaymentCompleted
-                      ? "Place Order"
-                      : "Complete Payment First"}
+                    Process Payment - ₹{total.toFixed(2)}
                   </button>
 
                   <Link

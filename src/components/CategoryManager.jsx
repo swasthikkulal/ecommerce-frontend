@@ -22,6 +22,9 @@ const CategoryManager = () => {
     parentCategory: "",
     isActive: true,
   });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     authenticateAdmin();
@@ -72,73 +75,69 @@ const CategoryManager = () => {
     }
   };
 
-  //   const handleCreateCategory = async (e) => {
-  //     e.preventDefault();
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       const response = await fetch(`${API_BASE_URL}/categories`, {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           "auth-token": token,
-  //         },
-  //         body: JSON.stringify(formData),
-  //       });
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size too large. Maximum size is 5MB.");
+        return;
+      }
 
-  //       const result = await response.json();
-  //       if (result.success) {
-  //         setShowForm(false);
-  //         setFormData({
-  //           name: "",
-  //           description: "",
-  //           image: "",
-  //           displayOrder: 0,
-  //           parentCategory: "",
-  //           isActive: true,
-  //         });
-  //         fetchCategories();
-  //         alert("Category created successfully!");
-  //       } else {
-  //         alert(`Error: ${result.message}`);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error creating category:", error);
-  //       alert("Error creating category");
-  //     }
-  //   };
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        alert("Invalid file type. Please use JPG, PNG, or WebP.");
+        return;
+      }
 
-  // components/Admin/CategoryManager.js
+      setSelectedImage(file);
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+
+      // Clear any existing image URL
+      setFormData({ ...formData, image: "" });
+    }
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
 
-      // Prepare data - convert empty string to null for parentCategory
-      const categoryData = {
-        ...formData,
-        parentCategory: formData.parentCategory || null,
-      };
+      if (!selectedImage && !editingCategory) {
+        alert("Please select an image");
+        return;
+      }
+
+      setLoading(true);
+
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("displayOrder", formData.displayOrder);
+      formDataToSend.append("parentCategory", formData.parentCategory || "");
+      formDataToSend.append("isActive", formData.isActive);
+
+      if (selectedImage) {
+        formDataToSend.append("image", selectedImage);
+      }
 
       const response = await fetch(`${API_BASE_URL}/categories`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "auth-token": token,
         },
-        body: JSON.stringify(categoryData),
+        body: formDataToSend,
       });
 
       const result = await response.json();
       if (result.success) {
         setShowForm(false);
-        setFormData({
-          name: "",
-          description: "",
-          image: "",
-          displayOrder: 0,
-          parentCategory: "",
-          isActive: true,
-        });
+        resetForm();
         fetchCategories();
         alert("Category created successfully!");
       } else {
@@ -147,33 +146,42 @@ const CategoryManager = () => {
     } catch (error) {
       console.error("Error creating category:", error);
       alert("Error creating category");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateCategory = async (categoryId) => {
     try {
       const token = localStorage.getItem("token");
+      setLoading(true);
+
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("displayOrder", formData.displayOrder);
+      formDataToSend.append("parentCategory", formData.parentCategory || "");
+      formDataToSend.append("isActive", formData.isActive);
+
+      // Only append image if a new one is selected
+      if (selectedImage) {
+        formDataToSend.append("image", selectedImage);
+      }
+
       const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           "auth-token": token,
         },
-        body: JSON.stringify(formData),
+        body: formDataToSend,
       });
 
       const result = await response.json();
       if (result.success) {
         setShowForm(false);
         setEditingCategory(null);
-        setFormData({
-          name: "",
-          description: "",
-          image: "",
-          displayOrder: 0,
-          parentCategory: "",
-          isActive: true,
-        });
+        resetForm();
         fetchCategories();
         alert("Category updated successfully!");
       } else {
@@ -182,6 +190,8 @@ const CategoryManager = () => {
     } catch (error) {
       console.error("Error updating category:", error);
       alert("Error updating category");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,6 +233,8 @@ const CategoryManager = () => {
       parentCategory: category.parentCategory || "",
       isActive: category.isActive,
     });
+    setSelectedImage(null);
+    setImagePreview(category.image || ""); // Show current image as preview
     setShowForm(true);
   };
 
@@ -235,9 +247,7 @@ const CategoryManager = () => {
     }
   };
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingCategory(null);
+  const resetForm = () => {
     setFormData({
       name: "",
       description: "",
@@ -246,6 +256,15 @@ const CategoryManager = () => {
       parentCategory: "",
       isActive: true,
     });
+    setSelectedImage(null);
+    setImagePreview("");
+    setEditingCategory(null);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingCategory(null);
+    resetForm();
   };
 
   return (
@@ -261,17 +280,11 @@ const CategoryManager = () => {
         <button
           onClick={() => {
             setEditingCategory(null);
-            setFormData({
-              name: "",
-              description: "",
-              image: "",
-              displayOrder: 0,
-              parentCategory: "",
-              isActive: true,
-            });
+            resetForm();
             setShowForm(true);
           }}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          disabled={loading}
         >
           Add New Category
         </button>
@@ -337,17 +350,32 @@ const CategoryManager = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
+                Category Image {!editingCategory && "*"}
               </label>
               <input
-                type="text"
-                value={formData.image}
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
-                }
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Enter image URL"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: JPG, PNG, WebP. Max size: 5MB
+                {editingCategory && " (Leave empty to keep current image)"}
+              </p>
+
+              {/* Image Preview */}
+              {(imagePreview || (editingCategory && !selectedImage)) && (
+                <div className="mt-3">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {selectedImage ? "New Preview:" : "Current Image:"}
+                  </p>
+                  <img
+                    src={imagePreview || editingCategory?.image}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center">
@@ -367,14 +395,20 @@ const CategoryManager = () => {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                disabled={loading}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
-                {editingCategory ? "Update Category" : "Create Category"}
+                {loading
+                  ? "Processing..."
+                  : editingCategory
+                  ? "Update Category"
+                  : "Create Category"}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                disabled={loading}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -388,6 +422,9 @@ const CategoryManager = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Image
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
@@ -409,14 +446,16 @@ const CategoryManager = () => {
             {categories.map((category) => (
               <tr key={category._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
+                  {category.image && (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    {category.image && (
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="w-8 h-8 rounded-full mr-3 object-cover"
-                      />
-                    )}
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         {category.name}
@@ -449,13 +488,15 @@ const CategoryManager = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => handleEditClick(category)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-3"
+                    className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
+                    disabled={loading}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category._id)}
-                    className="text-red-600 hover:text-red-900"
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    disabled={loading}
                   >
                     Delete
                   </button>

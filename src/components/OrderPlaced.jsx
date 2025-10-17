@@ -14,6 +14,22 @@ const OrderPlaced = () => {
     }
   }, [nav, token]);
 
+  const deleteCartData = () => {
+    try {
+      const token = localStorage.getItem("token");
+      fetch(`${config.API_BASE_URL}/orders/clearcart`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": token,
+        },
+      });
+      console.log("Cart cleared successfully");
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+    }
+  };
+
   const fetchdata = async () => {
     try {
       setLoading(true);
@@ -32,6 +48,7 @@ const OrderPlaced = () => {
 
       if (result.success) {
         setData(result.data || []);
+        deleteCartData();
       } else {
         alert("No data found");
         setData([]);

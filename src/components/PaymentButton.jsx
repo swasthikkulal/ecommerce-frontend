@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import config from "../config";
 
 const PaymentButton = () => {
+  const nav = useNavigate();
   const makePayment = async () => {
     const total = localStorage.getItem("total");
     const token = localStorage.getItem("token");
@@ -40,8 +41,8 @@ const PaymentButton = () => {
           Payment ID: ${response.razorpay_payment_id}
           Order ID: ${response.razorpay_order_id}`);
 
-          localStorage.setItem("success", true);
-          window.location.href = "/cartpage";
+          // window.location.href = "/cartpage";
+          nav("/orderplaced");
         },
         prefill: {
           name: "Raj Swasthik",
@@ -63,7 +64,7 @@ const PaymentButton = () => {
   return (
     <button
       onClick={makePayment}
-      className="btn btn-primary bg-green-400 px-2 py-3 rounded-md"
+      className="btn btn-primary bg-green-400 w-[100%] py-4 rounded-md"
     >
       Pay Now
     </button>

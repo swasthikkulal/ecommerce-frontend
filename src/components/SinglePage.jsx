@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function SingleViewPage() {
   const nav = useNavigate();
@@ -113,10 +114,12 @@ export default function SingleViewPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert(`✅ ${quantity} kg of ${getbyId.name} added to cart!`);
+        toast.success(`${quantity} kg of ${getbyId.name} added to cart!`);
         nav("/cartpage");
       } else {
-        alert(`❌ Failed to add to cart: ${result.message || "Unknown error"}`);
+        toast.error(
+          `❌ Failed to add to cart: ${result.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.log(error.message);

@@ -105,7 +105,7 @@ const CategoryProducts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 mt-[5%]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6" aria-label="Breadcrumb">
@@ -199,7 +199,7 @@ const CategoryProducts = () => {
                       className="w-full mt-3 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
                       onClick={() => navigate(`/singleview/${product._id}`)}
                     >
-                      Add to Cart
+                      View
                     </button>
                   </div>
                 </div>
