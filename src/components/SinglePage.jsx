@@ -12,7 +12,7 @@ export default function SingleViewPage() {
   const [allIcecream, setallIcecream] = useState([]);
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL || "http://13.60.68.11:3000/api";
 
   useEffect(() => {
     axios
@@ -118,7 +118,7 @@ export default function SingleViewPage() {
         nav("/cartpage");
       } else {
         toast.error(
-          `❌ Failed to add to cart: ${result.message || "Unknown error"}`
+          `❌ Failed to add to cart: ${result.message || "Unknown error"}`,
         );
       }
     } catch (error) {
@@ -295,8 +295,8 @@ export default function SingleViewPage() {
                     getbyId.stock > 10
                       ? "bg-green-500"
                       : getbyId.stock > 5
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
                   }`}
                 ></div>
                 <span
@@ -304,8 +304,8 @@ export default function SingleViewPage() {
                     getbyId.stock > 10
                       ? "text-green-600"
                       : getbyId.stock > 5
-                      ? "text-yellow-600"
-                      : "text-red-600"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                   }`}
                 >
                   {getbyId.stock} {getbyId.stock === 1 ? "kg" : "kgs"} available
@@ -313,8 +313,8 @@ export default function SingleViewPage() {
                   {getbyId.stock > 10
                     ? "In Stock"
                     : getbyId.stock > 5
-                    ? "Low Stock"
-                    : "Almost Gone!"}
+                      ? "Low Stock"
+                      : "Almost Gone!"}
                 </span>
               </div>
             </div>

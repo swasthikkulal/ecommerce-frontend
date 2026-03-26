@@ -101,6 +101,13 @@ const CartPage = () => {
 
   // POST Checkout - Create New Order
   const handleCheckout = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to proceed with checkout");
+      navigate("/login");
+      return;
+    }
+
     if (
       !address.fullName ||
       !address.phone ||
@@ -109,12 +116,11 @@ const CartPage = () => {
       !address.state ||
       !address.pincode
     ) {
-      alert("Please fill in all required address fields before checkout");
+      toast.error("Please fill in all required address fields before checkout");
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
 
       // Store the final total in localStorage right before checkout
       console.log("💰 Final total before checkout:", total.toFixed(2));
@@ -159,11 +165,11 @@ const CartPage = () => {
         // Save address for future use
         saveAddressToLocalStorage(address);
 
-        // Clear cart and redirect to payment page
+        // Clear cart and navigate to payment page
         setCartItems([]);
 
-        // Navigate to payment page - the total is already stored in localStorage
-        window.location.href = "/paymentpage";
+        // Navigate to payment page using React Router (avoids server round-trip)
+        navigate("/paymentpage");
       } else {
         alert(`Checkout failed: ${result.message || "Unknown error"}`);
       }

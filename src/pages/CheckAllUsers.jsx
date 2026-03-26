@@ -15,7 +15,7 @@ const CheckAllUsers = () => {
 
   const authenticateAdmin = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/user/users", {
+      const response = await fetch("http://13.60.68.11:3000/api/user/users", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -39,7 +39,7 @@ const CheckAllUsers = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:3000/api/admin/users", {
+      const response = await fetch("http://13.60.68.11:3000/api/admin/users", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +290,7 @@ const CheckAllUsers = () => {
                     <td className="px-8 py-6 whitespace-nowrap">
                       <span
                         className={`inline-flex px-4 py-2 text-sm font-bold rounded-full capitalize shadow-sm ${getRoleBadgeColor(
-                          user.role
+                          user.role,
                         )}`}
                       >
                         {user.role}
@@ -405,7 +405,7 @@ const CheckAllUsers = () => {
                       </label>
                       <p
                         className={`inline-flex px-4 py-2 text-sm font-bold rounded-full capitalize ${getRoleBadgeColor(
-                          selectedUser.role
+                          selectedUser.role,
                         )}`}
                       >
                         {selectedUser.role}

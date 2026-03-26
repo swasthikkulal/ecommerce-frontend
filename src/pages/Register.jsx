@@ -22,7 +22,7 @@ const Register = () => {
     try {
       e.preventDefault();
       console.log("Form submitted:", formData);
-      const res = await fetch("http://localhost:3000/api/user/register", {
+      const res = await fetch("http://13.60.68.11:3000/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

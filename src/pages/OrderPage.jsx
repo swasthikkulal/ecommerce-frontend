@@ -48,7 +48,7 @@ const OrdersPage = () => {
             headers: {
               "auth-token": token,
             },
-          }
+          },
         );
 
         if (response.ok) {
@@ -77,9 +77,9 @@ const OrdersPage = () => {
       return imagePath;
     }
 
-    // If it's a relative path, add localhost prefix
+    // If it's a relative path, add 13.60.68.11 prefix
     if (imagePath.startsWith("/")) {
-      return `http://localhost:3000${imagePath}`;
+      return `http://13.60.68.11:3000${imagePath}`;
     }
 
     return "/placeholder-image.jpg";
@@ -166,7 +166,7 @@ const OrdersPage = () => {
   const stats = {
     total: orders.length,
     pending: orders.filter(
-      (order) => getOrderStatus(order) === "pending_payment"
+      (order) => getOrderStatus(order) === "pending_payment",
     ).length,
     confirmed: orders.filter((order) => getOrderStatus(order) === "confirmed")
       .length,
@@ -174,7 +174,7 @@ const OrdersPage = () => {
       .length,
     totalRevenue: orders.reduce(
       (sum, order) => sum + (order.orderSummary?.total || 0),
-      0
+      0,
     ),
   };
 

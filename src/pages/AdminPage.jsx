@@ -169,7 +169,7 @@ const AdminPage = () => {
             // DO NOT set Content-Type manually when using FormData
           },
           body: formData,
-        }
+        },
       );
 
       const result = await res.json();
@@ -364,8 +364,8 @@ const AdminPage = () => {
                         item.stock > 10
                           ? "text-green-600"
                           : item.stock > 0
-                          ? "text-yellow-600"
-                          : "text-red-600"
+                            ? "text-yellow-600"
+                            : "text-red-600"
                       }`}
                     >
                       Stock: {item.stock}
@@ -466,7 +466,7 @@ const AdminPage = () => {
                         Current Image:
                       </p>
                       <img
-                        src={`http://localhost:3000${updateForm.image}`}
+                        src={`http://13.60.68.11:3000${updateForm.image}`}
                         alt="Current"
                         className="w-32 h-32 object-cover rounded-lg border border-gray-300"
                       />
