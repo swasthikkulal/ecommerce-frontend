@@ -22,11 +22,14 @@ const Register = () => {
     try {
       e.preventDefault();
       console.log("Form submitted:", formData);
-      const res = await fetch("http://localhost:3000/api/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        "https://my-express-api-l1us.onrender.com/api/user/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        },
+      );
       const data = await res.json();
       if (data.success) {
         alert("Registration successful!");

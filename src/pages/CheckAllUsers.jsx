@@ -15,13 +15,16 @@ const CheckAllUsers = () => {
 
   const authenticateAdmin = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/user/users", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token,
+      const response = await fetch(
+        "https://my-express-api-l1us.onrender.com/api/user/users",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": token,
+          },
         },
-      });
+      );
       const data = await response.json();
       if (data.success) {
         nav("/checkallusers");
@@ -39,13 +42,16 @@ const CheckAllUsers = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:3000/api/admin/users", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token,
+      const response = await fetch(
+        "https://my-express-api-l1us.onrender.com/api/admin/users",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": token,
+          },
         },
-      });
+      );
 
       const result = await response.json();
 
@@ -290,7 +296,7 @@ const CheckAllUsers = () => {
                     <td className="px-8 py-6 whitespace-nowrap">
                       <span
                         className={`inline-flex px-4 py-2 text-sm font-bold rounded-full capitalize shadow-sm ${getRoleBadgeColor(
-                          user.role
+                          user.role,
                         )}`}
                       >
                         {user.role}
@@ -405,7 +411,7 @@ const CheckAllUsers = () => {
                       </label>
                       <p
                         className={`inline-flex px-4 py-2 text-sm font-bold rounded-full capitalize ${getRoleBadgeColor(
-                          selectedUser.role
+                          selectedUser.role,
                         )}`}
                       >
                         {selectedUser.role}

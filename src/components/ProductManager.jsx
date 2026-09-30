@@ -26,7 +26,8 @@ const ProductManager = () => {
   // Add config object like in CategoryManager
   const config = {
     API_BASE_URL:
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
+      import.meta.env.VITE_API_BASE_URL ||
+      "https://my-express-api-l1us.onrender.com/api",
   };
 
   const token = localStorage.getItem("token");
@@ -231,7 +232,7 @@ const ProductManager = () => {
             "auth-token": token,
           },
           body: formDataToSend,
-        }
+        },
       );
 
       const result = await response.json();
@@ -254,7 +255,7 @@ const ProductManager = () => {
   const handleDeleteProduct = async (productId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this product? This action cannot be undone."
+        "Are you sure you want to delete this product? This action cannot be undone.",
       )
     ) {
       return;
@@ -276,7 +277,7 @@ const ProductManager = () => {
             "auth-token": token,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const result = await response.json();
@@ -352,7 +353,7 @@ const ProductManager = () => {
           body: JSON.stringify({
             isActive: !currentStatus,
           }),
-        }
+        },
       );
 
       const result = await response.json();
@@ -361,7 +362,7 @@ const ProductManager = () => {
         alert(
           `Product ${
             !currentStatus ? "activated" : "deactivated"
-          } successfully!`
+          } successfully!`,
         );
       } else {
         alert(`Error: ${result.message}`);
@@ -550,8 +551,8 @@ const ProductManager = () => {
                 {loading
                   ? "Processing..."
                   : editingProduct
-                  ? "Update Product"
-                  : "Create Product"}
+                    ? "Update Product"
+                    : "Create Product"}
               </button>
               <button
                 type="button"

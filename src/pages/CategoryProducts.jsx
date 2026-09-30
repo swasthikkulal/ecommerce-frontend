@@ -12,7 +12,8 @@ const CategoryProducts = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://my-express-api-l1us.onrender.com/api";
 
   useEffect(() => {
     if (categorySlug) {
@@ -30,7 +31,7 @@ const CategoryProducts = () => {
 
       if (categoryResult.success) {
         const foundCategory = categoryResult.data.find(
-          (cat) => cat.slug === categorySlug
+          (cat) => cat.slug === categorySlug,
         );
         setCategory(foundCategory);
 
@@ -44,7 +45,7 @@ const CategoryProducts = () => {
             const categoryProducts = productsResult.data.filter(
               (product) =>
                 product.category?._id === foundCategory._id ||
-                product.category === foundCategory._id
+                product.category === foundCategory._id,
             );
 
             setProducts(categoryProducts);
@@ -70,7 +71,7 @@ const CategoryProducts = () => {
         const categoryProducts = result.data.filter(
           (product) =>
             product.category?._id === categoryId ||
-            product.category === categoryId
+            product.category === categoryId,
         );
 
         setProducts(categoryProducts);

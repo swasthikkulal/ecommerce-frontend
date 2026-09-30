@@ -41,7 +41,7 @@ const OrderPlaced = () => {
             "Content-Type": "application/json",
             "auth-token": token,
           },
-        }
+        },
       );
       const result = await response.json();
       console.log("API Response:", result);
@@ -155,7 +155,7 @@ const OrderPlaced = () => {
                       <p className="text-sm text-gray-500 mt-1">
                         Placed on{" "}
                         {new Date(
-                          order.createdAt?.$date || order.createdAt
+                          order.createdAt?.$date || order.createdAt,
                         ).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
@@ -169,7 +169,7 @@ const OrderPlaced = () => {
                       {order.status && (
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            order.status
+                            order.status,
                           )}`}
                         >
                           {order.status.charAt(0).toUpperCase() +
@@ -179,7 +179,7 @@ const OrderPlaced = () => {
                       {order.paymentStatus && (
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            order.paymentStatus
+                            order.paymentStatus,
                           )}`}
                         >
                           Payment: {order.paymentStatus}
@@ -241,7 +241,7 @@ const OrderPlaced = () => {
                           <p className="text-lg font-bold text-gray-900">
                             ₹
                             {((item.price || 0) * (item.quantity || 1)).toFixed(
-                              2
+                              2,
                             )}
                           </p>
                         </div>

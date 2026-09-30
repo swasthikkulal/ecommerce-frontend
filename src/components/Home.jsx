@@ -17,7 +17,8 @@ const Home = () => {
   const searchTimeoutRef = useRef(null);
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://my-express-api-l1us.onrender.com/api";
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -136,7 +137,7 @@ const Home = () => {
         duration: 0.3,
         ease: "power1.out",
       },
-      "-=1"
+      "-=1",
     );
     tl.from(
       categoriesRef.current,
@@ -146,7 +147,7 @@ const Home = () => {
         duration: 0.4,
         ease: "power2.out",
       },
-      "-=0.5"
+      "-=0.5",
     );
   });
 

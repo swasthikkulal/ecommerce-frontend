@@ -8,7 +8,8 @@ const CategoryManager = () => {
   const nav = useNavigate();
   const config = {
     API_BASE_URL:
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
+      import.meta.env.VITE_API_BASE_URL ||
+      "https://my-express-api-l1us.onrender.com/api",
   };
 
   const [categories, setCategories] = useState([]);
@@ -52,7 +53,8 @@ const CategoryManager = () => {
 
   // Use environment variable or default URL
   const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://my-express-api-l1us.onrender.com/api";
 
   useEffect(() => {
     fetchCategories();
@@ -206,7 +208,7 @@ const CategoryManager = () => {
             headers: {
               "auth-token": token,
             },
-          }
+          },
         );
 
         const result = await response.json();
@@ -401,8 +403,8 @@ const CategoryManager = () => {
                 {loading
                   ? "Processing..."
                   : editingCategory
-                  ? "Update Category"
-                  : "Create Category"}
+                    ? "Update Category"
+                    : "Create Category"}
               </button>
               <button
                 type="button"
