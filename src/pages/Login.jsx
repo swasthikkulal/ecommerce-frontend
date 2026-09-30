@@ -17,6 +17,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+
       const response = await fetch(
         "https://my-express-api-l1us.onrender.com/api/user/login",
         {
@@ -25,6 +26,8 @@ const Login = () => {
           body: JSON.stringify(formData),
         },
       );
+=======
+    
       const data = await response.json();
       console.log(data);
       if (data.success) {

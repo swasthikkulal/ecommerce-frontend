@@ -26,8 +26,10 @@ const ProductManager = () => {
   // Add config object like in CategoryManager
   const config = {
     API_BASE_URL:
+
       import.meta.env.VITE_API_BASE_URL ||
       "https://my-express-api-l1us.onrender.com/api",
+
   };
 
   const token = localStorage.getItem("token");

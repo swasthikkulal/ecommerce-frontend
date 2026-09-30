@@ -9,7 +9,7 @@ const PaymentButton = () => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(
-        `${config.API_BASE_URL}/payment/create-order`, // ✅ make sure your route matches backend
+        `${config.API_BASE_URL}/payment/create-order`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "auth-token": token },
@@ -19,7 +19,14 @@ const PaymentButton = () => {
         }
       );
 
+      if (!res.ok) {
+        const errText = await res.text();
+        alert(`❌ Payment API Error (${res.status}): ${errText}`);
+        return;
+      }
+
       const data = await res.json();
+      console.log("Payment API response:", data);
 
       // ✅ Save MongoDB _id to localStorage
       if (data.paymentId) {
@@ -28,6 +35,11 @@ const PaymentButton = () => {
       }
 
       const order = data.razorpayOrder;
+
+      if (!order) {
+        alert(`❌ Razorpay order not returned from server.\nServer response: ${JSON.stringify(data)}`);
+        return;
+      }
 
       const options = {
         key: "rzp_test_ROAtsM0wOInprk", // Replace with your key

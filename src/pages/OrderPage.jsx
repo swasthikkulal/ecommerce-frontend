@@ -80,6 +80,11 @@ const OrdersPage = () => {
     // If it's a relative path, add 16.171.53.17 prefix
     if (imagePath.startsWith("/")) {
       return `https://my-express-api-l1us.onrender.com${imagePath}`;
+
+    // If it's a relative path, add 13.60.68.11 prefix
+    if (imagePath.startsWith("/")) {
+      return `https://my-express-api-l1us.onrender.com${imagePath}`;
+
     }
 
     return "/placeholder-image.jpg";

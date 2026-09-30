@@ -466,7 +466,10 @@ const AdminPage = () => {
                         Current Image:
                       </p>
                       <img
+
                         src={`https://my-express-api-l1us.onrender.com${updateForm.image}`}
+
+
                         alt="Current"
                         className="w-32 h-32 object-cover rounded-lg border border-gray-300"
                       />

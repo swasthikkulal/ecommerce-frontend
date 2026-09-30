@@ -15,6 +15,7 @@ const CheckAllUsers = () => {
 
   const authenticateAdmin = async () => {
     try {
+
       const response = await fetch(
         "https://my-express-api-l1us.onrender.com/api/user/users",
         {
@@ -23,6 +24,8 @@ const CheckAllUsers = () => {
             "Content-Type": "application/json",
             "auth-token": token,
           },
+
+   
         },
       );
       const data = await response.json();
@@ -42,6 +45,7 @@ const CheckAllUsers = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
+
       const response = await fetch(
         "https://my-express-api-l1us.onrender.com/api/admin/users",
         {
@@ -50,6 +54,8 @@ const CheckAllUsers = () => {
             "Content-Type": "application/json",
             "auth-token": token,
           },
+
+     
         },
       );
 
