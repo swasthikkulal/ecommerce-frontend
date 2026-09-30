@@ -15,13 +15,19 @@ const CheckAllUsers = () => {
 
   const authenticateAdmin = async () => {
     try {
-      const response = await fetch("http://13.60.68.11:3000/api/user/users", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token,
+
+      const response = await fetch(
+        "https://my-express-api-l1us.onrender.com/api/user/users",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": token,
+          },
+
+   
         },
-      });
+      );
       const data = await response.json();
       if (data.success) {
         nav("/checkallusers");
@@ -39,13 +45,19 @@ const CheckAllUsers = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://13.60.68.11:3000/api/admin/users", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token,
+
+      const response = await fetch(
+        "https://my-express-api-l1us.onrender.com/api/admin/users",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": token,
+          },
+
+     
         },
-      });
+      );
 
       const result = await response.json();
 
